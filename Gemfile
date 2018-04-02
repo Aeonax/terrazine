@@ -1,1 +1,1 @@
-gem 'pg_hstore'
+gem 'pg-hstore', '1.2.0'

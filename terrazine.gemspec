@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email         = ['aeonax.liar@gmail.com']
 
   spec.summary       = %q(Terrazine is a parser of data structures in to SQL)
-  spec.description   = %q(You can take a look at {github}[https://github.com/Aeonax/terrazine])
+  spec.description   = %q(You can take a look at [github]{https://github.com/Aeonax/terrazine}.)
   spec.homepage      = 'https://github.com/Aeonax/terrazine'
   spec.license       = 'MIT'
 
@@ -21,5 +21,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake', '~> 10.0'
   spec.add_development_dependency 'rspec', '~> 3.0'
 
-  spec.add_dependency 'pg_hstore'
+  spec.add_dependency 'pg-hstore', '1.2.0'
+
+  spec.required_ruby_version   =  '>= 2.3.0'
 end
