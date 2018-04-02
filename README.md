@@ -1,29 +1,36 @@
 # Terrazin
 
 ## Idea
-Simple and comfortable, as possible, data structures parser in to SQL.
+Simple and comfortable, as possible, data structures parser in to SQL.  
 
-### Data
+#### Data
 Describing sql with data structures like [honeysql](https://github.com/jkk/honeysql) or [ql](https://github.com/niquola/ql) in clojure.  
 
-### Class instance
-Construct data structures by Constructor instance methods.
+#### Constructor
+Construct data structures inside Constructor instance.
 
-### Result
+#### Result
 Get result and access any returned data rails like syntax.
 
-### Realization
+#### Realization
 This is my first gem and first close meeting with OOP... I would appreciate any help =)
 And sorry for my English =(
 
-## Constructor
-You can create Constructor instance by calling `new_constructor`. It optional accepts data structure.  
+## Detailed description
+
+### Usage
+Describe whole data structure, or create `Constructor` instance and combine parts of data by it instance methods. Then send result to 'Terrazine.send_request(structure||constructor, params = {})' and it will return you `Terrazine::Result` instance. (description will be soon)
+
+### Constructor
+You can create Constructor instance by calling `Terrazine.new_constructor`. It optional accepts data structure.  
 
 ```ruby
-constructor = new_constructor
-constructor_2 = new_constructor from: :calls
+constructor = Terrazine.new_constructor
+constructor_2 = Terrazine.new_constructor from: :calls
 ```
-### Instance methods
+#### Instance methods
+Instance methods write or combine data inside constructor instance.
+Not finished methods - just rewrites structure without combination with existing data.  
 - [ ] with
 - [x] select/distinct_select
 - [ ] from
@@ -33,11 +40,10 @@ constructor_2 = new_constructor from: :calls
 - [x] paginate
 - [x] merge - just merging instance structure with argument
 - [x] build_sql
-They accepts data structure or part of it
 
-## Data Structures
+### Data Structures
 
-### Select
+#### Select
 Accepts 
 - `String` || `Symbol`
 - `Hash` represents column alias - 'AS' (if key begins from `_`) OR table alias that will join to the values table prefix OR another data structure(present keyword `:select`).
@@ -47,19 +53,28 @@ Accepts
 constructor.select "name, email"
 constructor.select :birthdate
 constructor.select m: [:common_rating, :work_rating, { _master_id: :id }]
-constructor.select { missed_calls_count: { select: [:_count, [:_nullif, :connected, :true]],
+constructor.select { _missed_calls_count: { select: [:_count, [:_nullif, :connected, :true]],
                                            from: [:calls, :c],
                                            where: ['c.client_id = u.id',
                                                    ['direction = ?', 0]]} }
-# as result sql will looks like
-['SELECT name, email, birthdate, m.common_rating, m.work_rating, m.id AS master_id,
-         (SELECT COUNT(NULLIF(connected, TRUE))
-          FROM calls c
-          WHERE c.client_id = u.id AND direction = $1) AS missed_calls_count',
- 0]
+# 
+constructor.structure
+# => { select: ['name, email', :birthdate,
+#               { m: [:common_rating, :work_rating, { _master_id: :id }] },
+#               { _missed_calls_count: { select: [:_count, [:_nullif, :connected, :true]],
+#                                        from: [:calls, :c],
+#                                        where: ['c.client_id = u.id',
+#                                                ['direction = ?', 0]]} }] }
+
+constructor.build_sql
+# => ['SELECT name, email, birthdate, m.common_rating, m.work_rating, m.id AS master_id,
+#             (SELECT COUNT(NULLIF(connected, TRUE))
+#              FROM calls c
+#              WHERE c.client_id = u.id AND direction = $1) AS missed_calls_count',
+#     0]
 ```
 
-### From
+#### From
 Accepts
 - `String` || `Symbol`
 - `Array` can contains table_name and table_alias OR `VALUES` OR both
@@ -71,7 +86,7 @@ from [:mrgl, [:_values, [1, 2], :rgl, [:zgl, :gl]]]
 ```
 I do not like the `from` syntax, but how it can be made more convenient...?
 
-### Join
+#### Join
 Accpets
 - `String`
 - `Array`:
@@ -89,7 +104,7 @@ join [[[:user, :u], { option: :full, on: [:or, 'mrgl = 2', 'rgl = 22'] }],
       [:master, { on: ['z = 12', 'mrgl = 12'] }]]
 ```
 
-### Conditions
+#### Conditions
 Current conditions implementation is sux... -_- Soon i'll change it.
 Accepts `String` or `Array`.
 First element of array is `Symbol` representation of join condition - `:or || :and` or by default `:and`.
@@ -106,7 +121,7 @@ conditions [['NOT z = 13',
 # => 'NOT z = 13 AND (mrgl = 2 OR rgl = 22) AND (rgl = 12 OR zgl = lol)'
 ```
 
-### With
+#### With
 ```ruby
 with [:alias_name, { select: true, from: :users}]
 with [[:alias_name, { select: true, from: :users}],
@@ -114,7 +129,7 @@ with [[:alias_name, { select: true, from: :users}],
                         from: :rgl}]]
 ```
 
-### Union
+#### Union
 ```ruby
 union: [{ select: true, from: [:o_list, [:_values, [1], :al, [:master]]] },
         { select: true, from: [:co_list, [:_values, [0, :FALSE, :TRUE, 0],
@@ -122,14 +137,14 @@ union: [{ select: true, from: [:o_list, [:_values, [1], :al, [:master]]] },
                                                           :payment, :master]]] }]
 ```
 
-## TODO:
+### TODO:
 - [ ] TESTS!!!
 - [ ] Parse data like arrays, booleans, nil to SQL  
 - [ ] Relocate functions builder in to class, finally I found how it can be done nice=))
 - [ ] meditate about structure supporting another databases(now supports only postgress)
 - [ ] should I bother with extra spaces?
 
-### Think of a better data structure for
+#### Think of a better data structure for
 - [ ] from
 - [ ] join !!!
 - [ ] where !!!!!! Support for rails like syntax with hash?
