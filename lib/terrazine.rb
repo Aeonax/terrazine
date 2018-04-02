@@ -8,8 +8,6 @@ require_relative 'terrazine/result'
 
 module Terrazine
 
-  VERSION = '0.0.1'
-
   def self.connection
     Config.connection
   end

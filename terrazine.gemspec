@@ -1,6 +1,6 @@
+$LOAD_PATH.push File.expand_path("../lib", __FILE__)
 
-lib = File.expand_path("../lib", __FILE__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'terrazine'
@@ -8,16 +8,13 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Aeonax']
   spec.email         = ['aeonax.liar@gmail.com']
 
-  spec.summary       = %q(Terrazine is a parser of data structures in SQL)
+  spec.summary       = %q(Terrazine is a parser of data structures in to SQL)
   spec.description   = %q(You can take a look at {github}[https://github.com/Aeonax/terrazine])
   spec.homepage      = 'https://github.com/Aeonax/terrazine'
   spec.license       = 'MIT'
 
-  spec.files         = `git ls-files -z`.split("\x0").reject do |f|
-    f.match(%r{^(test|spec|features)/})
-  end
-
-  # spec.bindir        = 'exe'
+  spec.files            = `git ls-files`.split("\n")
+  spec.test_files       = `git ls-files -- {spec,features}/*`.split("\n")
   spec.require_paths = ['lib']
 
   spec.add_development_dependency 'bundler', '~> 1.16'
