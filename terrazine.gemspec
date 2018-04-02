@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email         = ['aeonax.liar@gmail.com']
 
   spec.summary       = %q(Terrazine is a parser of data structures in to SQL)
-  spec.description   = %q(You can take a look at [github]{https://github.com/Aeonax/terrazine}.)
+  spec.description   = %q(You can take a look at [github](https://github.com/Aeonax/terrazine).)
   spec.homepage      = 'https://github.com/Aeonax/terrazine'
   spec.license       = 'MIT'
 
