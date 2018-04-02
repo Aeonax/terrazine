@@ -1,0 +1,10 @@
+#  This check makes sense only in Ruby 1.9, since in 2.0+ utf-8 is the default source file encoding.
+Style/Encoding:
+  Enabled: false
+
+# Commonly used screens these days easily fit more than 80 characters.
+Metrics/LineLength:
+  Max: 100
+
+AllCops:
+  TargetRubyVersion: '2.3.1'
