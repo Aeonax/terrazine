@@ -49,8 +49,9 @@ module Terrazine
       result.clear # they advise to clear it, but maybe better to use it until presenter?
     end
 
-    def present(options = {})
-      Presenter.present(self, options.merge(@options[:presenter_options]))
+    def present(o = {})
+      options = @options[:presenter_options] ? o.merge(@options[:presenter_options]) : o
+      Presenter.present(self, options)
     end
 
     # ResultRow inheritance support
