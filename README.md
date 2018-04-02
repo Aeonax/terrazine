@@ -19,7 +19,7 @@ And sorry for my English =(
 ## Detailed description
 
 ### Usage
-Describe whole data structure, or create `Constructor` instance and combine parts of data by it instance methods. Then send result to 'Terrazine.send_request(structure||constructor, params = {})' and it will return you `Terrazine::Result` instance. (description will be soon)
+Describe whole data structure, or create `Constructor` instance and combine parts of data by it instance methods. Then send result to `Terrazine.send_request(structure||constructor, params = {})` and it will return you `Terrazine::Result` instance. (description will be soon)
 
 ### Constructor
 You can create Constructor instance by calling `Terrazine.new_constructor`. It optional accepts data structure.  
@@ -47,8 +47,8 @@ Not finished methods - just rewrites structure without combination with existing
 Accepts 
 - `String` || `Symbol`
 - `Hash` represents column alias - 'AS' (if key begins from `_`) OR table alias that will join to the values table prefix OR another data structure(present keyword `:select`).
-- Another `Constructor` or `Hash representing data structure`
-- `Array` can contain all of the above structures OR in case of first symbol/string begins from `_` it will represent SQL function
+- Another `Constructor` or `Hash` representing data structure
+- `Array` can contain all of the above structures OR in case of first symbol/string begins from `_` it will represent SQL function  
 ```ruby
 constructor.select "name, email"
 constructor.select :birthdate
@@ -57,7 +57,6 @@ constructor.select { _missed_calls_count: { select: [:_count, [:_nullif, :connec
                                            from: [:calls, :c],
                                            where: ['c.client_id = u.id',
                                                    ['direction = ?', 0]]} }
-# 
 constructor.structure
 # => { select: ['name, email', :birthdate,
 #               { m: [:common_rating, :work_rating, { _master_id: :id }] },
@@ -77,7 +76,7 @@ constructor.build_sql
 #### From
 Accepts
 - `String` || `Symbol`
-- `Array` can contains table_name and table_alias OR `VALUES` OR both
+- `Array` can contains table_name and table_alias OR `VALUES` OR both  
 ```ruby
 from 'table_name table_alias' || :table_name
 from [:table_name, :table_alias]
@@ -94,7 +93,7 @@ First element same as `from` first element - table name or `Array` of table_name
   - on - conditions(description will be bellow)
   - options - optional contains `Symbol` or `String` of join type... rename to type?  
 
-`Array` can be nested
+`Array` can be nested  
 ```ruby
 join 'users u ON u.id = m.user_id'
 join ['users u ON u.id = m.user_id',
@@ -105,10 +104,9 @@ join [[[:user, :u], { option: :full, on: [:or, 'mrgl = 2', 'rgl = 22'] }],
 ```
 
 #### Conditions
-Current conditions implementation is sux... -_- Soon i'll change it.
-Accepts `String` or `Array`.
-First element of array is `Symbol` representation of join condition - `:or || :and` or by default `:and`.
-
+Current conditions implementation is sux... -_- Soon i'll change it.  
+Now it accepts `String` or `Array`.  
+First element of array is `Symbol` representation of join condition - `:or || :and` or by default `:and`.  
 ```ruby
 conditions 'mrgl = 12'
 conditions ['z = 12', 'mrgl = 12']
@@ -137,14 +135,48 @@ union: [{ select: true, from: [:o_list, [:_values, [1], :al, [:master]]] },
                                                           :payment, :master]]] }]
 ```
 
-### TODO:
-- [ ] TESTS!!!
-- [ ] Parse data like arrays, booleans, nil to SQL  
+### Result representation
+#### ::Row
+Result row - allow accessing data by field name via method - `row.name # => "mrgl"` or get hash representation with `row.to_h`
+Contains
+- `values`
+- `pg_result` - `::Result` instance
+
+#### ::Result < ::Row
+Data can be accessed like from row - it use first row, or you can iterate rows.  
+Methods `each`, `each_with_index`, `first`, `last`, `map`, `count`, `present?` delegates to `rows`. `index` delegates to `fields`.  
+For data representation as `Hash` or `Array` exists method `present`  
+After initialize `PG::Result` cleared  
+##### Contains
+- `rows` - Array of `::Row`
+- `fields` - Array of column/alias names of returned data
+- `options`
+##### Options
+- `:types` - hash representing which column require additional parsing and which type
+- `:presenter_options`
+
+#### ::Presenter
+Used in `result.present(options = {})` - it represents data as `Hash` or `Array`. options are merged with `result.options[:presenter_options]`
+Data will be presented as `Array` if `rows > 1` or `options[:array]` present.
+##### Available options
+- `array` - if querry returns only one row, but on client you await for array of data.
+- `structure` - `Hash` with field as key and value as modifier. Modifier will rewrite field value in result. Modifier acts:
+  - `Proc` - it will call proc with row as argument, and! then pass it to modifier_presentation again
+  - `::Result` - it will call `modifier.present`
+  - any else will be returned without changes
+
+## TODO:
+- [ ] Parse data like arrays, booleans, nil to SQL
 - [ ] Relocate functions builder in to class, finally I found how it can be done nice=))
 - [ ] meditate about structure supporting another databases(now supports only postgress)
 - [ ] should I bother with extra spaces?
 
-#### Think of a better data structure for
+### Tests
+- [ ] Constructor + Builder
+- [ ] Result
+- [ ] Request
+
+### Think of a better data structure for
 - [ ] from
 - [ ] join !!!
 - [ ] where !!!!!! Support for rails like syntax with hash?
