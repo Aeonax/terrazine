@@ -20,6 +20,7 @@ Terrazine is not finished yet. Now it has allmost full SELECT builder, but with 
 - awfull where syntax
 - bad join syntax
 - not all SQL functions supported  
+
 And now it supports only Postgresql.
 
 ## Detailed description
@@ -213,4 +214,4 @@ Except this todo's there is a lot commented todo's inside project.-_-
 
 ## Contact
 You can write me your suggestions for improving the syntax, wishes, things that you think are missing here.  
-My [email](aeonax.liar@gmail.com), [Ruby On Rails slack](https://rubyonrails-link.slack.com/messages/D8W1WSRAP)
+My [email](mailto:aeonax.liar@gmail.com), [Ruby On Rails slack](https://rubyonrails-link.slack.com/messages/D8W1WSRAP)
