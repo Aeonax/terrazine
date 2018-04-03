@@ -1,6 +1,7 @@
 require_relative 'spec_helper'
 
 # TODO.... -_-
+# May be store structures with string representation? Because tests sux right now=(
 describe Terrazine::Constructor do
   before :each do
     @constructor = Terrazine.new_constructor
@@ -13,7 +14,7 @@ describe Terrazine::Constructor do
     expect(@constructor.class).to eql Terrazine::Constructor
   end
 
-  context '`select`' do
+  context '`SELECT`' do
     it 'build simple structure' do
       @constructor.select(:name)
       @constructor.select('phone')
@@ -45,9 +46,24 @@ describe Terrazine::Constructor do
       @permanent_c.select :secure_id
       expect(@permanent_c.build_sql).to eq "SELECT (SELECT COUNT(NULLIF(connected, true)) FROM calls c WHERE u.id = c.user_id  ) AS calls_count, u.name, u.phone, NULLIF(u.role, 'master') AS master, u.abilities, u.id, u.birthdate, o.client_name, secure_id "
     end
+
+    it 'build DISTINCT' do
+      @constructor.distinct_select([:id, :name, :phone])
+      expect(@constructor.build_sql).to eq 'SELECT DISTINCT id, name, phone '
+    end
+
+    it 'build DISTINCT ON field' do
+      @constructor.distinct_select([:id, :name, :phone], :id)
+      expect(@constructor.build_sql).to eq 'SELECT DISTINCT ON(id) id, name, phone '
+    end
+
+    it 'build DISTINCT ON array of field' do
+      @constructor.distinct_select([:id, :name, :phone], [:id, :phone])
+      expect(@constructor.build_sql).to eq 'SELECT DISTINCT ON(id, phone) id, name, phone '
+    end
   end
 
-  context '`from`' do
+  context '`FROM`' do
     it 'build simple data structures' do
       @constructor.from :users
       expect(@constructor.build_sql).to eq 'FROM users '
@@ -55,19 +71,25 @@ describe Terrazine::Constructor do
       expect(@permanent_c.build_sql).to match 'o.client_name, secure_id FROM users u $'
     end
 
-    it 'build values' do
+    it 'build VALUES' do
       @constructor.from [:_values, [:_params, 'mrgl'], :r, ['type']]
       expect(@constructor.build_sql).to eq ['FROM (VALUES($1)) AS r (type) ', ['mrgl']]
     end
 
-    it 'build values and tables' do
+    it 'build VALUES and tables' do
       @constructor.from [[:mrgl, :m], [:_values, [1, 2], :rgl, [:zgl, :gl]]]
       expect(@constructor.build_sql).to eq 'FROM mrgl m, (VALUES(1, 2)) AS rgl (zgl, gl) '
     end
+
+    it 'build VALUES with many rows' do
+      @constructor.from [:_values, [[:_params, 'mrgl'], [:_params, 'rgl']], :r, ['type']]
+      expect(@constructor.build_sql).to eq ['FROM (VALUES($1), ($2)) AS r (type) ',
+                                            ['mrgl', 'rgl']]
+    end
   end
 
-  context '`join`' do
-    it 'build simple join' do
+  context '`JOIN`' do
+    it 'build simple structure' do
       @constructor.join 'users u ON u.id = m.user_id'
       expect(@constructor.build_sql).to eq 'JOIN users u ON u.id = m.user_id '
       @constructor.join ['users u ON u.id = m.user_id',
@@ -84,7 +106,7 @@ describe Terrazine::Constructor do
     end
   end
 
-  context '`conditions`' do
+  context '`WHERE`' do
     
   end
 end
