@@ -199,7 +199,6 @@ Data will be presented as `Array` if `rows > 1` or `options[:array]` present.
 Except this todo's there is a lot commented todo's inside project.-_-
 - [ ] Parse data like arrays, booleans, nil to SQL
 - [ ] Relocate functions builder in to class, finally I found how it can be done nice=))
-- [ ] meditate about structure supporting another databases(now supports only postgress)
 - [ ] should I bother with extra spaces?
 
 ### Tests
@@ -207,10 +206,11 @@ Except this todo's there is a lot commented todo's inside project.-_-
 - [ ] Result
 - [ ] Request
 
-### Meditate on a better data structure for
+### Meditate
 - [ ] from
 - [ ] join !!!
-- [ ] where !!!!!! Support for rails like syntax with hash?  
+- [ ] where !!!!!! Supporting rails like syntax with hash?
+- [ ] supporting another databases
 
 ## Contact
 You can write me your suggestions for improving the syntax, wishes, things that you think are missing here.  
