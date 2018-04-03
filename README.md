@@ -100,6 +100,14 @@ constructor.build_sql
 #              FROM calls c
 #              WHERE c.client_id = u.id AND direction = $1) AS missed_calls_count',
 #     0]
+```  
+##### Distinct Select
+`distinct: true, select: {...}` in data structure will do the job. If you need `DISTINCT ON(...)` you should replace `true` with `Array` of || or `String`, `Symbol`.  
+Or there is `distinct_select`  method in constructor with default `true` option.
+```ruby
+constructor.distinct_select([:id, :name], :phone).build_sql # => 'SELECT DISTINCT ON(phone) id, name '
+# OR
+constructor.distinct_select([:id, :name]).build_sql # => 'SELECT DISTINCT id, name'
 ```
 
 #### From
