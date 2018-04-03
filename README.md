@@ -14,20 +14,47 @@ Get result and access any returned data rails like syntax.
 
 #### Realization
 This is my first gem and first close meeting with OOP... I would appreciate any help =)
-And sorry for my English =(
+And sorry for my English =(  
+#### Readiness
+Terrazine is not finished yet. Now it has allmost full SELECT builder, but with some limitations like:
+- awfull where syntax
+- bad join syntax
+- not all SQL functions supported  
+And now it supports only Postgresql.
 
 ## Detailed description
 
 ### Usage
-Describe whole data structure, or create `Constructor` instance and combine parts of data by it instance methods. Then send result to `Terrazine.send_request(structure||constructor, params = {})` and it will return you `Terrazine::Result` instance. (description will be soon)
+#### Initialization
+Add this line to the Gemfile  
+```ruby
+gem 'terrazine', '0.0.2'
+```  
+After server initialization set `Terrazine.config`. Now config accepts only `:connection` option. In the bright future will be added `:adapter` option support.  
+In rails you can set config with [after_initialize](https://apidock.com/rails/Rails/Configuration/after_initialize) and it will looks like:  
+```ruby
+# file config/application.rb
+module Name
+  class Application < Rails::Application
+  # ....
+    config.after_initialize do
+      Terrazine.config connection: ActiveRecord::Base.connection.raw_connection
+    end
+  # ....
+  end
+end
+```  
+#### Workflow
+- Describe whole data structure, or create `Constructor` instance and combine parts of data by it instance methods. 
+- Send result to `Terrazine.send_request(structure||constructor, params = {})` 
+- Rejoice at the `::Result`
 
 ### Constructor
 You can create Constructor instance by calling `Terrazine.new_constructor`. It optional accepts data structure.  
-
 ```ruby
 constructor = Terrazine.new_constructor
 constructor_2 = Terrazine.new_constructor from: :calls
-```
+```  
 #### Instance methods
 Instance methods write or combine data inside constructor instance.
 Not finished methods - just rewrites structure without combination with existing data.  
@@ -42,6 +69,7 @@ Not finished methods - just rewrites structure without combination with existing
 - [x] build_sql
 
 ### Data Structures
+You can take a look on more detailed examples in `spec/constructor_spec.rb`
 
 #### Select
 Accepts 
@@ -156,7 +184,7 @@ After initialize `PG::Result` cleared
 - `:presenter_options`
 
 #### ::Presenter
-Used in `result.present(options = {})` - it represents data as `Hash` or `Array`. options are merged with `result.options[:presenter_options]`
+Used in `result.present(options = {})` - it represents data as `Hash` or `Array`. Options are merged with `result.options[:presenter_options]`  
 Data will be presented as `Array` if `rows > 1` or `options[:array]` present.
 ##### Available options
 - `array` - if querry returns only one row, but on client you await for array of data.
@@ -164,8 +192,10 @@ Data will be presented as `Array` if `rows > 1` or `options[:array]` present.
   - `Proc` - it will call proc with row as argument, and! then pass it to modifier_presentation again
   - `::Result` - it will call `modifier.present`
   - any else will be returned without changes
+- `delete` - (will be soon) - Symbol, String or Array representing keys that must be deleted from result data.
 
 ## TODO:
+Except this todo's there is a lot commented todo's inside project.-_-
 - [ ] Parse data like arrays, booleans, nil to SQL
 - [ ] Relocate functions builder in to class, finally I found how it can be done nice=))
 - [ ] meditate about structure supporting another databases(now supports only postgress)
@@ -176,7 +206,11 @@ Data will be presented as `Array` if `rows > 1` or `options[:array]` present.
 - [ ] Result
 - [ ] Request
 
-### Think of a better data structure for
+### Meditate on a better data structure for
 - [ ] from
 - [ ] join !!!
-- [ ] where !!!!!! Support for rails like syntax with hash?
+- [ ] where !!!!!! Support for rails like syntax with hash?  
+
+## Contact
+You can write me your suggestions for improving the syntax, wishes, things that you think are missing here.  
+My [email](aeonax.liar@gmail.com), [Ruby On Rails slack](https://rubyonrails-link.slack.com/messages/D8W1WSRAP)
