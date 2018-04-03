@@ -56,7 +56,7 @@ describe Terrazine::Constructor do
     end
 
     it 'build values' do
-      @constructor.from [:_values, [:_param, 'mrgl'], :r, ['type']]
+      @constructor.from [:_values, [:_params, 'mrgl'], :r, ['type']]
       expect(@constructor.build_sql).to eq ['FROM (VALUES($1)) AS r (type) ', ['mrgl']]
     end
 

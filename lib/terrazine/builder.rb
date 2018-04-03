@@ -1,7 +1,10 @@
+require_relative 'functions_builder'
+
 module Terrazine
   # build structures in to sql string
   class Builder
     attr_accessor :sql, :constructor
+    include Functions
 
     def initialize(constructor)
       @constructor = constructor
@@ -38,14 +41,6 @@ module Terrazine
       end
     end
 
-    # def build_select_query(structure)
-    # puts "build_select_query, structure: #{structure}"
-    # sql += build_select(structure[:select], structure[:distinct]) if structure[:select]
-    # [:from, :join, :where, :order, :limit, :offset].each do |i|
-    # sql += send("build_#{i}", structure[i]) if structure[i]
-    # end
-    # end
-
     def build_union(structure)
       structure.map { |i| build_sql(i) }.join ' UNION '
     end
@@ -60,26 +55,7 @@ module Terrazine
     end
 
     def build_select(structure, distinct = nil)
-      # puts "build_select, structure #{structure}"
       "SELECT #{build_distinct_select distinct}#{build_columns structure} "
-    end
-
-    def build_tables(structure)
-      case structure
-      when Array
-        if check_alias(structure.first) # VALUES function or ...?
-          build_function(structure)
-        # if it's a array with strings/values
-        elsif structure.select { |i| i.is_a? Array }.empty? # array of table_name and alias
-          structure.join ' '
-        else # array of tables/values
-          structure.map { |i| i.is_a?(Array) ? build_tables(i) : i }.join(', ')
-        end
-      when String, Symbol
-        structure
-      else
-        raise "Undefined structure for FROM - #{structure}"
-      end
     end
 
     def build_from(structure)
@@ -171,6 +147,24 @@ module Terrazine
       "#{field} AS #{name.to_s.sub(/^_/, '')}" # update ruby for delete_prefix? =)
     end
 
+    def build_tables(structure)
+      case structure
+      when Array
+        if check_alias(structure.first) # VALUES function or ...?
+          build_function(structure)
+        # if it's a array with strings/values
+        elsif structure.select { |i| i.is_a? Array }.empty? # array of table_name and alias
+          structure.join ' '
+        else # array of tables/values
+          structure.map { |i| i.is_a?(Array) ? build_tables(i) : i }.join(', ')
+        end
+      when String, Symbol
+        structure
+      else
+        raise "Undefined structure for FROM - #{structure}"
+      end
+    end
+
     def build_columns(structure, prefix = nil)
       case structure
       when Array
@@ -208,43 +202,6 @@ module Terrazine
       else # TODO: values from value passing here... -_-
         structure
         # raise "Undefined class: #{structure.class} of #{structure}" # TODO: ERRORS class
-      end
-    end
-
-    # TODO!!!!!!! Relocate in class FunctionsBuilder? and send function name in it.
-    def build_function(structure, prefix = nil)
-      function = structure.first.to_s.sub(/^_/, '')
-      arguments = structure.drop(1)
-      case function.to_sym
-      when :param
-        build_param arguments.first
-      when :count # TODO? alias support on this lvl
-        if arguments.count > 1
-          arguments.map { |i| "COUNT(#{build_columns(i, prefix)})" }.join ','
-        else
-          "COUNT(#{build_columns(arguments.first, prefix)})"
-        end
-      when :nullif
-        # TODO? querry for value
-        "NULLIF(#{build_columns(arguments.first, prefix)}, #{arguments[1]})"
-      when :array # TODO? build_columns support
-        if [Hash, Constructor].include?(arguments.first.class)
-          "ARRAY(#{build_sql arguments.first})"
-        else # TODO? condition and error case
-          "ARRAY[#{arguments.join ', '}]"
-        end
-      when :avg
-        "AVG(#{build_columns(arguments.first, prefix)})"
-      when :values
-        "(VALUES(#{build_columns arguments.first, prefix})) AS #{structure[2]} (#{build_columns arguments.last})"
-      when :case
-        else_val = "ELSE #{arguments.pop} " unless arguments.last.is_a? Array
-        conditions = arguments.map { |i| "WHEN #{i.first} THEN #{i.last}" }.join ' '
-        "CASE #{conditions} #{else_val}END"
-      when :coalesce
-        "COALESCE(#{build_columns(arguments, prefix)})"
-      else
-        raise "Unknown function #{function}" # TODO: errors-_-
       end
     end
   end
