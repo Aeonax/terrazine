@@ -71,8 +71,8 @@ module Terrazine
     # distinct_select select_structure
     # distinct_select select_structure, distinct_field
     # distinct_select select_structure, [*distinct_fields]
-    def distinct_select(structure, fields = nil)
-      @structure[:distinct] = fields || true
+    def distinct_select(structure, fields = true)
+      @structure[:distinct] = fields
       select structure
       self
     end

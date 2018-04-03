@@ -17,7 +17,7 @@ module Terrazine
 
       def count(arguments, prefix)
         if arguments.count > 1
-          arguments.map { |i| "COUNT(#{build_columns(i, prefix)})" }.join ','
+          arguments.map { |i| "COUNT(#{build_columns(i, prefix)})" }.join ', '
         else
           "COUNT(#{build_columns(arguments.first, prefix)})"
         end

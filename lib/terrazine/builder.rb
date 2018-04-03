@@ -17,10 +17,10 @@ module Terrazine
       sql = ''
       sql += "WITH #{build_with(structure[:with])} " if structure[:with]
       # puts "build_sql, structure: #{structure}"
-      [:union, :select, :insert, :update, :delete, :set, :from, :join, :where,
-       :group, :order, :limit, :offset].each do |i|
+      [:union, :select, :insert, :update, :delete, :set, :from,
+       :join, :where, :group, :order, :limit, :offset].each do |i|
          next unless structure[i]
-         sql += send("build_#{i}".to_sym, structure[i])
+         sql += send("build_#{i}".to_sym, structure[i], structure)
        end
       sql
     end
@@ -41,58 +41,32 @@ module Terrazine
       end
     end
 
-    def build_union(structure)
+    def build_union(structure, _)
       structure.map { |i| build_sql(i) }.join ' UNION '
     end
 
-    def build_distinct_select(distinct)
-      case distinct
+    def build_distinct(structure)
+      case structure
       when Array
-        "DISTINCT ON(#{build_columns fields}) "
+        "DISTINCT ON(#{build_columns structure}) "
+      when String, Symbol
+        "DISTINCT ON(#{structure}) "
       when true
         'DISTINCT '
       end
     end
 
-    def build_select(structure, distinct = nil)
-      "SELECT #{build_distinct_select distinct}#{build_columns structure} "
+    def build_select(structure, common_structure)
+      distinct = build_distinct common_structure[:distinct]
+      "SELECT #{distinct}#{build_columns structure} "
     end
 
-    def build_from(structure)
+    def build_from(structure, _)
       "FROM #{build_tables(structure)} "
     end
 
-    def conditions_constructor(structure, joiner = :and, level = nil)
-      case structure
-      when Array
-        key = structure.first
-        # AND, OR support
-        if key.is_a? Symbol
-          res = structure.drop(1).map { |i| conditions_constructor(i) }.join " #{key} ".upcase
-          level ? res : "(#{res})"
-        # Sub Queries support - ['rgl IN ?', {...}]
-        elsif key =~ /\?/
-          if [Hash, Constructor].include?(structure.second.class)
-            key.sub(/\?/, "(#{build_sql(structure.second)})")
-          else
-            key.sub(/\?/, build_param(structure.second))
-          end
-        else
-          res = structure.map { |i| conditions_constructor(i) }.join " #{joiner} ".upcase
-          level ? res : "(#{res})"
-        end
-      when String
-        structure
-      end
-    end
-
-    # TODO? conditions like [:eq :name :Aeonax]
-    def build_conditions(structure)
-      conditions_constructor(structure, :and, true) + ' '
-    end
-
     # TODO: -_-
-    def build_join(structure)
+    def build_join(structure, _)
       if structure.is_a? Array
         # TODO: hash is sux here -_- !!!!!!
         if structure.second.is_a? Hash
@@ -100,27 +74,27 @@ module Terrazine
           v = structure.second
           "#{v[:option].to_s.upcase + ' ' if v[:option]}JOIN #{name} ON #{build_conditions v[:on]}"
         else
-          structure.map { |i| build_join(i) }.join
+          structure.map { |i| build_join(i, nil) }.join
         end
       else
         structure =~ /join/i ? structure : "JOIN #{structure} "
       end
     end
 
-    def build_where(structure)
+    def build_where(structure, _)
       "WHERE #{build_conditions(structure)} "
     end
 
     # TODO!
-    def build_order(structure)
+    def build_order(structure, _)
       "ORDER BY #{structure} "
     end
 
-    def build_limit(limit)
+    def build_limit(limit, _)
       "LIMIT #{limit || 8} "
     end
 
-    def build_offset(offset)
+    def build_offset(offset, _)
       "OFFSET #{offset || 0} "
     end
 
@@ -145,6 +119,35 @@ module Terrazine
 
     def build_as(field, name)
       "#{field} AS #{name.to_s.sub(/^_/, '')}" # update ruby for delete_prefix? =)
+    end
+
+    # TODO? conditions like [:eq :name :Aeonax]
+    def build_conditions(structure)
+      conditions_constructor(structure, :and, true) + ' '
+    end
+
+    def conditions_constructor(structure, joiner = :and, level = nil)
+      case structure
+      when Array
+        key = structure.first
+        # AND, OR support
+        if key.is_a? Symbol
+          res = structure.drop(1).map { |i| conditions_constructor(i) }.join " #{key} ".upcase
+          level ? res : "(#{res})"
+        # Sub Queries support - ['rgl IN ?', {...}]
+        elsif key =~ /\?/
+          if [Hash, Constructor].include?(structure.second.class)
+            key.sub(/\?/, "(#{build_sql(structure.second)})")
+          else
+            key.sub(/\?/, build_param(structure.second))
+          end
+        else
+          res = structure.map { |i| conditions_constructor(i) }.join " #{joiner} ".upcase
+          level ? res : "(#{res})"
+        end
+      when String
+        structure
+      end
     end
 
     def build_tables(structure)
