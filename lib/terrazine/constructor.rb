@@ -4,7 +4,7 @@ module Terrazine
     def initialize(structure = {})
       @structure = structure
       # @params = []
-      @builder = Builder.new(self)
+      @builder = Builder.new
     end
 
     # TODO? join hash inside array?

@@ -6,8 +6,7 @@ module Terrazine
     attr_accessor :sql, :constructor
     include Functions
 
-    def initialize(constructor)
-      @constructor = constructor
+    def initialize
       @params = []
     end
 
