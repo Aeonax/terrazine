@@ -171,7 +171,25 @@ union: [{ select: true, from: [:o_list, [:_values, [1], :al, [:master]]] },
                                                     :al, [:rating, :rejected,
                                                           :payment, :master]]] }]
 ```
+#### Functions
+As mentioned before functions syntax is: `[:_fn_name, *arguments]`
+##### Params
+Pass argument as params to adapter  
+```ruby
+[:_values, [:_params, 'mrgl', true, 'rgl'], :z, [:f_1, :f_2, :f_3]]
+'(VALUES($1, $2, $3) AS z (f_1, f_2, f_3))'
+```
 
+##### Values
+Second and third arguments are nesessary right now, but in furure i'll do them optional.
+Arguments:
+- array of values, can be nested
+- `AS` name
+- column names  
+```ruby
+[:_values, [{u: [:name, :phone]}, :role, [:_params, 'rgl']], :z, [:n, :p, :r, :m]]
+# => '(VALUES(u.name, u.phone, role, $1) AS z (n, p, r, m))'
+```
 ### Result representation
 #### ::Row
 Result row - allow accessing data by field name via method - `row.name # => "mrgl"` or get hash representation with `row.to_h`
