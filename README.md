@@ -33,13 +33,15 @@ gem 'terrazine', '0.0.2'
 ```  
 After server initialization set `Terrazine.config`. Now config accepts only `:connection` option. In the bright future will be added `:adapter` option support.  
 In rails you can set config with [after_initialize](https://apidock.com/rails/Rails/Configuration/after_initialize) and it will looks like:  
+
+UPD: On production, rails closing `PG::Connection` from `after_initialize`, as fast fix connection now can be `Proc` object which must return `PG::Connection`. Later i'll try to find better solution  
 ```ruby
 # file config/application.rb
 module Name
   class Application < Rails::Application
   # ....
     config.after_initialize do
-      Terrazine.config connection: ActiveRecord::Base.connection.raw_connection
+      Terrazine.config connection: -> { ActiveRecord::Base.connection.raw_connection }
     end
   # ....
   end

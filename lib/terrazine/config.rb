@@ -8,7 +8,9 @@ module Terrazine
 
       def connection(conn = nil)
         @@connection ||= conn
-        conn || @@connection
+        c = conn || @@connection
+        # Proc because of closing PG::Connection by rails on production -_-
+        c.is_a?(Proc) ? c.call : c
       end
 
       def connection!(conn = nil)
