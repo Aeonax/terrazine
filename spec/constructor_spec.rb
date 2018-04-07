@@ -14,6 +14,25 @@ describe Terrazine::Constructor do
     expect(@constructor.class).to eql Terrazine::Constructor
   end
 
+  context '`WITH`' do
+    it 'build array like syntax' do
+      @constructor.with [:name, { select: true }]
+      expect(@constructor.build_sql).to eq 'WITH name AS (SELECT * ) '
+    end
+
+    it 'build nested array like syntax' do
+      @constructor.with [[:name, { select: true }],
+                         [:another_name, { select: :mrgl }]]
+      expect(@constructor.build_sql).to eq 'WITH name AS (SELECT * ), another_name AS (SELECT mrgl ) '
+    end
+
+    it 'build hash like syntax' do
+      @constructor.with name: { select: true },
+                        another_name: { select: :mrgl }
+      expect(@constructor.build_sql).to eq 'WITH name AS (SELECT * ), another_name AS (SELECT mrgl ) '
+    end
+  end
+
   context '`SELECT`' do
     it 'build simple structure' do
       @constructor.select(:name)

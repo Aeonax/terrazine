@@ -14,9 +14,7 @@ module Terrazine
     def build_sql(structure)
       structure = structure.is_a?(Constructor) ? structure.structure : structure
       sql = ''
-      sql += "WITH #{build_with(structure[:with])} " if structure[:with]
-      # puts "build_sql, structure: #{structure}"
-      [:union, :select, :insert, :update, :delete, :set, :from,
+      [:with, :union, :select, :insert, :update, :delete, :set, :from,
        :join, :where, :group, :order, :limit, :offset].each do |i|
          next unless structure[i]
          sql += send("build_#{i}".to_sym, structure[i], structure)
@@ -32,12 +30,24 @@ module Terrazine
       res
     end
 
-    def build_with(structure)
-      if structure.second.is_a? Hash
-        "#{structure.first} AS (#{build_sql(structure.last)})"
+    # TODO: :with_recursive
+    def construct_with(structure)
+      case structure
+      when Array
+        if structure.second.is_a? Hash
+          "#{structure.first} AS (#{build_sql(structure.last)})"
+        else
+          structure.map { |v| construct_with(v) }.join ', '
+        end
+      when Hash
+        iterate_hash(structure) { |k, v| "#{k} AS (#{build_sql v})" }
       else
-        structure.map { |v| build_with(v) }.join ', '
+        raise
       end
+    end
+
+    def build_with(structure, _)
+      "WITH #{construct_with(structure)} "
     end
 
     def build_union(structure, _)

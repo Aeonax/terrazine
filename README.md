@@ -195,6 +195,10 @@ with: [[:alias_name, { select: true, from: :users}],
        [:alias_name_2, { select: {u: [:name, :email]},
                         from: :rgl}]]
 # => 'WITH alias_name (SELECT * FROM users ), alias_name_2 (...) '
+# OR
+with name: { select: true },
+     another_name: { select: :mrgl }
+# => 'WITH name AS (SELECT * ), another_name AS (SELECT mrgl ) '
 ```  
 
 #### Union
