@@ -4,7 +4,6 @@ module Terrazine
     def initialize(structure = {})
       @structure = structure
       # @params = []
-      @builder = Builder.new
     end
 
     # TODO? join hash inside array?
@@ -157,7 +156,7 @@ module Terrazine
     # => 'SELECT .... FROM ...'
     # => ['SELECT .... FROM .... WHERE id = $1', [22]]
     def build_sql
-      @builder.get_sql @structure
+      Builder.new.get_sql @structure
     end
   end
 end
