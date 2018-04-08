@@ -125,6 +125,28 @@ describe Terrazine::Constructor do
     end
   end
 
+  context '`ORDER`' do
+    it 'build string structre' do
+      @constructor.order 'name ASC'
+      expect(@constructor.build_sql).to eq 'ORDER BY name ASC '
+    end
+
+    it 'build array structure' do
+      @constructor.order [:name, :email]
+      expect(@constructor.build_sql).to eq 'ORDER BY name, email '
+    end
+
+    it 'build hash structure' do
+      @constructor.order name: :asc, phone: [:first, :desc]
+      expect(@constructor.build_sql).to eq 'ORDER BY name ASC, phone DESC NULLS FIRST '
+    end
+
+    it 'build complicated structure' do
+      @constructor.order [:role, { name: :asc, phone: [:last, :desc], amount: '<' }]
+      expect(@constructor.build_sql).to eq 'ORDER BY role, name ASC, phone DESC NULLS LAST, amount USING< '
+    end
+  end
+
   context '`WHERE`' do
     
   end

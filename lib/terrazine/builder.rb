@@ -4,7 +4,10 @@ module Terrazine
   # build structures in to sql string
   class Builder
     attr_accessor :sql, :constructor
+    # do methods inside modules private? https://6ftdan.com/allyourdev/2015/05/02/private-module-methods-in-ruby/
+    # rename methods in to "function_#{name}" ?
     include Functions
+    # relocate "construct_#{name}" methods in modules and leave here only "build_#{name}"
 
     def initialize
       @params = []
@@ -30,22 +33,6 @@ module Terrazine
       res
     end
 
-    # TODO: :with_recursive
-    def construct_with(structure)
-      case structure
-      when Array
-        if structure.second.is_a? Hash
-          "#{structure.first} AS (#{build_sql(structure.last)})"
-        else
-          structure.map { |v| construct_with(v) }.join ', '
-        end
-      when Hash
-        iterate_hash(structure) { |k, v| "#{k} AS (#{build_sql v})" }
-      else
-        raise
-      end
-    end
-
     def build_with(structure, _)
       "WITH #{construct_with(structure)} "
     end
@@ -54,24 +41,13 @@ module Terrazine
       structure.map { |i| build_sql(i) }.join ' UNION '
     end
 
-    def build_distinct(structure)
-      case structure
-      when Array
-        "DISTINCT ON(#{build_columns structure}) "
-      when String, Symbol
-        "DISTINCT ON(#{structure}) "
-      when true
-        'DISTINCT '
-      end
-    end
-
     def build_select(structure, common_structure)
-      distinct = build_distinct common_structure[:distinct]
-      "SELECT #{distinct}#{build_columns structure} "
+      distinct = construct_distinct common_structure[:distinct]
+      "SELECT #{distinct}#{construct_columns structure} "
     end
 
     def build_from(structure, _)
-      "FROM #{build_tables(structure)} "
+      "FROM #{construct_tables(structure)} "
     end
 
     # TODO: -_-
@@ -79,7 +55,7 @@ module Terrazine
       if structure.is_a? Array
         # TODO: hash is sux here -_- !!!!!!
         if structure.second.is_a? Hash
-          name = build_tables structure.first # (name.is_a?(Array) ? name.join(' ') : name)
+          name = construct_tables structure.first # (name.is_a?(Array) ? name.join(' ') : name)
           v = structure.second
           "#{v[:option].to_s.upcase + ' ' if v[:option]}JOIN #{name} ON #{build_conditions v[:on]}"
         else
@@ -94,9 +70,39 @@ module Terrazine
       "WHERE #{build_conditions(structure)} "
     end
 
+    def construct_order_options(option)
+      case option
+      when Array
+        option.sort.map { |i| construct_order_options i }.join ' '
+      when :last, :first
+        "nulls #{option}".upcase
+      when :asc, :desc
+        option.to_s.upcase
+      else
+        "USING#{option}"
+      end
+    end
+
+    # { name: :asc, email: [:desc, :last] }
+    # [:name, :email, { phone: :last }]
+    def construct_order(structure)
+      case structure
+      when Array # function or values for order
+        if check_alias structure.first
+          construct_columns structure
+        else
+          structure.map { |i| construct_order i }.join ', '
+        end
+      when Hash
+        iterate_hash(structure) { |k, v| "#{construct_order k} #{construct_order_options v}" }
+      else
+        structure
+      end
+    end
+
     # TODO!
     def build_order(structure, _)
-      "ORDER BY #{structure} "
+      "ORDER BY #{construct_order structure} "
     end
 
     def build_limit(limit, _)
@@ -132,26 +138,51 @@ module Terrazine
 
     # TODO? conditions like [:eq :name :Aeonax]
     def build_conditions(structure)
-      conditions_constructor(structure, :and, true) + ' '
+      construct_condition(structure, :and, true) + ' '
     end
 
-    def conditions_constructor(structure, joiner = :and, level = nil)
+    # TODO: :with_recursive
+    def construct_with(structure)
+      case structure
+      when Array
+        if structure.second.is_a? Hash
+          "#{structure.first} AS (#{build_sql(structure.last)})"
+        else
+          structure.map { |v| construct_with(v) }.join ', '
+        end
+      when Hash
+        iterate_hash(structure) { |k, v| "#{k} AS (#{build_sql v})" }
+      else
+        raise
+      end
+    end
+
+    def construct_distinct(structure)
+      return unless structure
+      if structure == true
+        'DISTINCT '
+      else
+        "DISTINCT ON(#{construct_columns structure}) "
+      end
+    end
+
+    def construct_condition(structure, joiner = :and, level = nil)
       case structure
       when Array
         key = structure.first
         # AND, OR support
         if key.is_a? Symbol
-          res = structure.drop(1).map { |i| conditions_constructor(i) }.join " #{key} ".upcase
+          res = structure.drop(1).map { |i| construct_condition(i) }.join " #{key} ".upcase
           level ? res : "(#{res})"
-        # Sub Queries support - ['rgl IN ?', {...}]
         elsif key =~ /\?/
+          # Sub Queries support - ['rgl IN ?', {...}]
           if [Hash, Constructor].include?(structure.second.class)
             key.sub(/\?/, "(#{build_sql(structure.second)})")
           else
             key.sub(/\?/, build_param(structure.second))
           end
         else
-          res = structure.map { |i| conditions_constructor(i) }.join " #{joiner} ".upcase
+          res = structure.map { |i| construct_condition(i) }.join " #{joiner} ".upcase
           level ? res : "(#{res})"
         end
       when String
@@ -159,7 +190,7 @@ module Terrazine
       end
     end
 
-    def build_tables(structure)
+    def construct_tables(structure)
       case structure
       when Array
         if check_alias(structure.first) # VALUES function or ...?
@@ -168,7 +199,7 @@ module Terrazine
         elsif structure.select { |i| i.is_a? Array }.empty? # array of table_name and alias
           structure.join ' '
         else # array of tables/values
-          structure.map { |i| i.is_a?(Array) ? build_tables(i) : i }.join(', ')
+          structure.map { |i| i.is_a?(Array) ? construct_tables(i) : i }.join(', ')
         end
       when String, Symbol
         structure
@@ -177,14 +208,14 @@ module Terrazine
       end
     end
 
-    def build_columns(structure, prefix = nil)
+    def construct_columns(structure, prefix = nil)
       case structure
       when Array
         # SQL function - in format: "_#{fn}"
         if check_alias(structure.first)
           build_function structure, prefix
         else
-          structure.map { |i| build_columns i, prefix }.join ', '
+          structure.map { |i| construct_columns i, prefix }.join ', '
         end
       when Hash
         # sub_query
@@ -194,15 +225,15 @@ module Terrazine
         else
           iterate_hash(structure) do |k, v|
             if check_alias(k)
-              build_as(build_columns(v, prefix), k)
+              build_as(construct_columns(v, prefix), k)
             else
-              build_columns(v, k.to_s)
+              construct_columns(v, k.to_s)
             end
           end
         end
-      when Symbol, String
+      when Symbol, String, Integer
         structure = structure.to_s
-        if prefix && structure !~ /, |\./
+        if prefix && structure !~ /, |\.|\(/
           "#{prefix}.#{structure}"
         else
           structure
@@ -210,7 +241,7 @@ module Terrazine
       when Constructor
         "(#{build_sql structure.structure})"
       when true # choose everything -_-
-        build_columns('*', prefix)
+        construct_columns('*', prefix)
       else # TODO: values from value passing here... -_-
         structure
         # raise "Undefined class: #{structure.class} of #{structure}" # TODO: ERRORS class

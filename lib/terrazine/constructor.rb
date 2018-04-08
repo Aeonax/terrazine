@@ -31,6 +31,11 @@ module Terrazine
       self
     end
 
+    def distinct(fields = true)
+      @structure[:distinct] = fields
+      self
+    end
+
     def distinct_select(structure, fields = true)
       @structure[:distinct] = fields
       select structure
@@ -67,6 +72,12 @@ module Terrazine
     # TODO: with constructor -_-
     def with(structure)
       @structure[:with] = structure
+      self
+    end
+
+    # TODO: order constructor -_-
+    def order(structure)
+      @structure[:order] = structure
       self
     end
 
