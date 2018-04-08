@@ -75,12 +75,72 @@ Not finished methods - just rewrites structure without combination with existing
 ### Data Structures
 You can take a look on more detailed examples in `spec/constructor_spec.rb`
 
-#### Select
-Accepts 
+#### Common patterns
+##### SQL Function
+Structure:
+- `Array`
+  - first element - `Symbol` that begins from _ - `:_nullif`
+  - arguments
+    - [columns](#columns)  
+Take a look in [detailed description](#sql-functions).  
+```ruby
+[:_count, [:_nullif, :row, [:_params, 'mrgl']]] # TODO: param?
+# => ['COUNT(NULLIF(row, $1))', ['mrgl']]
+```  
+##### Columns
+Possible structures:
+- `String`
+  - if it passed in to hash with table alias table alias will be added to it
+  - if there is no table alias it will be returned to the builder as it is.
+- `Symbol` - just parsed to string
+- `Hash`
+  - key - table alias||name
+  - value - [columns](#columns)
+- [SQL function](#sql-function)
+- `Array` - holder of any possible structures  
+```ruby
+['name', {u: ['role', 'u.phone, m.rating', :field]}]
+# => 'name, u.role, u.phone, m.rating, u.field'
+```  
+##### Tables
+Possible structuresL
 - `String` || `Symbol`
-- `Hash` represents column alias - 'AS' (if key begins from `_`) OR table alias that will join to the values table prefix OR another data structure(present keyword `:select`).
-- Another `Constructor` or `Hash` representing data structure
-- `Array` can contain all of the above structures OR in case of first symbol/string begins from `_` it will represent SQL function  
+- [SQL function](#sql-function)
+- `Array`
+  - if there is no `Array` inside it will be joined `.join ' '`
+  - otherwise it will be recursive mapped  
+```ruby
+['users u', [:_values, ...], [:masters, :m]]
+'users u, (VALUES...), masters m'
+```   
+##### Conditions
+Current conditions implementation is sux... -_- Soon i'll change it.  
+Possible structures:
+- `String`
+- `Array`
+  - `Symbol` joiner representation, by default `:and`
+  - `String`
+- `Array` - holder of any possible structures  
+```ruby
+[:or, ['NOT z = 13', [:or, 'mrgl = 2', 'rgl = 22']],
+      [:or, 'rgl = 12', "zgl = 'lol'"]]
+# => "(NOT z = 13 AND (mrgl = 2 OR rgl = 22)) OR (rgl = 12 zgl = 'lol')"
+[['NOT z = 13',
+ [:or, 'mrgl = 2', 'rgl = 22']],
+ [:or, 'rgl = 12', 'zgl = lol']]
+# => 'NOT z = 13 AND (mrgl = 2 OR rgl = 22) AND (rgl = 12 OR zgl = lol)'
+```  
+##### Sub Querry
+Possible structures:
+- `Constructor` instance
+- `Hash` with `:select` value  
+
+#### Select
+Possible structures:
+- [columns](#columns)
+- [sub querry](#sub-query)
+- [SQL function](#sql-function)
+- `Array` with combination of possible structures.  
 ```ruby
 # String
 constructor.select "name, email"
@@ -117,8 +177,16 @@ constructor.build_sql
 ```  
 
 ##### Distinct Select
-`distinct: true, select: {...}` in data structure will do the job. If you need `DISTINCT ON(...)` you should replace `true` with `Array` of || or `String`, `Symbol`.  
-Or there is `distinct_select`  method in constructor with default `true` option.  
+To specify distinct select you should add to your data structure `:distinct` value:
+- `true`
+- [columns](#columns)  
+Or with `Constructor` instance methods:
+- `.distinct`
+  - distinct structure - optional
+- `.distinct_select`
+  - [select](#select) structure
+  - distinct structure - optional
+In constructor methods `distinct: true` passed by default  
 ```ruby
 # as data
 distinct: true, select: true
@@ -130,9 +198,10 @@ constructor.distinct_select([:id, :name], :phone).build_sql # => 'SELECT DISTINC
 ```  
 
 #### From
-Accepts
-- `String` || `Symbol`
-- `Array` can contains table_name and table_alias OR `VALUES` OR both  
+Possible structures:
+- [table representation](#tables)
+- [SQL functions](#sql-functions)
+- `Array` with combination of possible structures.  
 ```ruby
 from: 'table_name table_alias' || :table_name
 from: [:table_name, :table_alias]
@@ -145,14 +214,14 @@ from: [[:table_name, :table_alias], [:_values, [1, 2], :values_name, [*values_co
 I do not like the `from` syntax, but how it can be made more convenient...?
 
 #### Join
-Accpets
-- `String`
-- `Array`:
-First element same as `from` first element - table name or `Array` of table_name and table_alias, then `Hash` with keys:
-  - on - conditions(description will be bellow)
-  - options - optional contains `Symbol` or `String` of join type... rename to type?  
-
-`Array` can be nested  
+Possible structures:
+- `String` - just passed in to `JOIN #{structure} `
+- `Array` with values(same order):
+  - [table representation](#tables)
+  - `Hash`
+    - `:on` - [conditions](#conditions)
+    - `:options` - optional - contains `Symbol` or `String` of join type... rename to type?
+- `Array` with combination of possible structures.  
 ```ruby
 join: 'users u ON u.id = m.user_id'
 join: ['users u ON u.id = m.user_id',
@@ -164,28 +233,22 @@ join: [[[:user, :u], { option: :full, on: [:or, 'mrgl = 2', 'rgl = 22'] }],
 # => 'FULL JOIN user u ON mrgl = 2 OR rgl = 22 JOIN master ON z = 12 AND mrgl = 12'
 ```  
 
-#### Conditions
-Current conditions implementation is sux... -_- Soon i'll change it.  
-Now it accepts `String` or `Array`.  
-First element of array is `Symbol` representation of join condition - `:or || :and` or by default `:and`.  
-```ruby
-'mrgl = 12'
-['z = 12', 'mrgl = 12']
-['NOT z = 13', [:or, 'mrgl = 2', 'rgl = 22']]
-[:or, ['NOT z = 13', [:or, 'mrgl = 2', 'rgl = 22']],
-      [:or, 'rgl = 12', "zgl = 'lol'"]]
-# => "(NOT z = 13 AND (mrgl = 2 OR rgl = 22)) OR (rgl = 12 zgl = 'lol')"
-[['NOT z = 13',
- [:or, 'mrgl = 2', 'rgl = 22']],
- [:or, 'rgl = 12', 'zgl = lol']]
-# => 'NOT z = 13 AND (mrgl = 2 OR rgl = 22) AND (rgl = 12 OR zgl = lol)'
-```  
-
 #### Order
-It's in development right now and accepts only string value  
+Possible structures:
+- `String`, `Symbol` just insert it in `"ORDER BY #{structure} "`
+- [SQL function](#sql-function)
+- `Hash`
+  - key - 
+  - value - options representation
+    - `Symbol` - `:last || :first || :asc || :desc`
+    - `String` - `'<' || '>'` or smthng else that passed in to `USING`
+    - `Array` - with symbols inside
+- `Array` - [columns](#columns) or `Hash`  
 ```ruby
-order: 'z.amount DESC'
-# => 'ORDER BY z.amount DESC'
+order: 'z.amount DESC' || :name
+# => 'ORDER BY z.amount DESC ' || 'ORDER BY name '
+order: [:name, [:_case ...], { amount: [:first, :desc] }]
+# => 'ORDER BY name, CASE ..., amount DESC NULLS FIRST '
 ```  
 
 #### With
@@ -210,14 +273,12 @@ union: [{ select: true, from: [:o_list, [:_values, [1], :al, [:master]]] },
 'SELECT ... UNION SELECT ...'
 ```  
 
-#### Functions
-As mentioned before functions syntax is: `[:_fn_name, *arguments]`
-
+#### SQL Functions
 ##### Params
 Pass argument as params to adapter  
 ```ruby
 [:_values, [:_params, 'mrgl', true, 'rgl'], :z, [:f_1, :f_2, :f_3]]
-'(VALUES($1, $2, $3) AS z (f_1, f_2, f_3))'
+['(VALUES($1, $2, $3) AS z (f_1, f_2, f_3))', ['mrgl', true, 'rgl']]
 ```
 
 ##### Values
@@ -265,6 +326,7 @@ Data will be presented as `Array` if `rows > 1` or `options[:array]` present.
 Except this todo's there is a lot commented todo's inside project.-_-
 - [x] Parse data like arrays, booleans, nil to SQL. (:_params function -\_-)
 - [x] Relocate functions builder in to class, finally I found how it can be done nice=))
+- [ ] Rename functions methods and do method_missing for them that will just pass arguments.
 - [ ] should I bother with extra spaces?
 - [ ] Insert
 - [ ] Update
