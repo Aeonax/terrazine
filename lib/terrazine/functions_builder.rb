@@ -1,12 +1,6 @@
 module Terrazine
   class Builder
     module Functions
-      def build_function(structure, prefix = nil)
-        function = structure.first.to_s.sub(/^_/, '')
-        arguments = structure.drop(1)
-        send(function, arguments, prefix)
-      end
-
       def params(arguments, _)
         if arguments.count > 1
           arguments.map { |i| build_param i }

@@ -89,7 +89,7 @@ module Terrazine
       case structure
       when Array # function or values for order
         if check_alias structure.first
-          construct_columns structure
+          construct_function structure
         else
           structure.map { |i| construct_order i }.join ', '
         end
@@ -166,35 +166,17 @@ module Terrazine
       end
     end
 
-    def construct_condition(structure, joiner = :and, level = nil)
-      case structure
-      when Array
-        key = structure.first
-        # AND, OR support
-        if key.is_a? Symbol
-          res = structure.drop(1).map { |i| construct_condition(i) }.join " #{key} ".upcase
-          level ? res : "(#{res})"
-        elsif key =~ /\?/
-          # Sub Queries support - ['rgl IN ?', {...}]
-          if [Hash, Constructor].include?(structure.second.class)
-            key.sub(/\?/, "(#{build_sql(structure.second)})")
-          else
-            key.sub(/\?/, build_param(structure.second))
-          end
-        else
-          res = structure.map { |i| construct_condition(i) }.join " #{joiner} ".upcase
-          level ? res : "(#{res})"
-        end
-      when String
-        structure
-      end
+    def construct_function(structure, prefix = nil)
+      function = structure.first.to_s.sub(/^_/, '')
+      arguments = structure.drop(1)
+      send(function, arguments, prefix)
     end
 
     def construct_tables(structure)
       case structure
       when Array
         if check_alias(structure.first) # VALUES function or ...?
-          build_function(structure)
+          construct_function(structure)
         # if it's a array with strings/values
         elsif structure.select { |i| i.is_a? Array }.empty? # array of table_name and alias
           structure.join ' '
@@ -213,7 +195,7 @@ module Terrazine
       when Array
         # SQL function - in format: "_#{fn}"
         if check_alias(structure.first)
-          build_function structure, prefix
+          construct_function structure, prefix
         else
           structure.map { |i| construct_columns i, prefix }.join ', '
         end
@@ -245,6 +227,30 @@ module Terrazine
       else # TODO: values from value passing here... -_-
         structure
         # raise "Undefined class: #{structure.class} of #{structure}" # TODO: ERRORS class
+      end
+    end
+
+    def construct_condition(structure, joiner = :and, level = nil)
+      case structure
+      when Array
+        key = structure.first
+        # AND, OR support
+        if key.is_a? Symbol
+          res = structure.drop(1).map { |i| construct_condition(i) }.join " #{key} ".upcase
+          level ? res : "(#{res})"
+        elsif key =~ /\?/
+          # Sub Queries support - ['rgl IN ?', {...}]
+          if [Hash, Constructor].include?(structure.second.class)
+            key.sub(/\?/, "(#{build_sql(structure.second)})")
+          else
+            key.sub(/\?/, build_param(structure.second))
+          end
+        else
+          res = structure.map { |i| construct_condition(i) }.join " #{joiner} ".upcase
+          level ? res : "(#{res})"
+        end
+      when String
+        structure
       end
     end
   end
