@@ -76,21 +76,22 @@ Not finished methods - just rewrites structure without combination with existing
 You can take a look on more detailed examples in `spec/constructor_spec.rb`
 
 #### Common patterns
-##### SQL Function
+###### SQL Function
 Structure:
 - `Array`
   - first element - `Symbol` that begins from _ - `:_nullif`
   - arguments
     - [columns](#columns)  
-Take a look in [detailed description](#sql-functions).  
+
 ```ruby
 [:_count, [:_nullif, :row, [:_params, 'mrgl']]] # TODO: param?
 # => ['COUNT(NULLIF(row, $1))', ['mrgl']]
 ```  
-##### Columns
+[Detailed Functions description](#sql-functions).  
+###### Columns
 Possible structures:
 - `String`
-  - if it passed in to hash with table alias table alias will be added to it
+  - if it locted in the `Hash` with table alias, table alias will be added to it
   - if there is no table alias it will be returned to the builder as it is.
 - `Symbol` - just parsed to string
 - `Hash`
@@ -102,18 +103,19 @@ Possible structures:
 ['name', {u: ['role', 'u.phone, m.rating', :field]}]
 # => 'name, u.role, u.phone, m.rating, u.field'
 ```  
-##### Tables
-Possible structuresL
+[Detailed Select description](#select)
+###### Tables
+Possible structures:
 - `String` || `Symbol`
 - [SQL function](#sql-function)
 - `Array`
-  - if there is no `Array` inside it will be joined `.join ' '`
+  - if there is no `Array` inside it will be joined `structure.join ' '`
   - otherwise it will be recursive mapped  
 ```ruby
 ['users u', [:_values, ...], [:masters, :m]]
 'users u, (VALUES...), masters m'
 ```   
-##### Conditions
+###### Conditions
 Current conditions implementation is sux... -_- Soon i'll change it.  
 Possible structures:
 - `String`
@@ -130,7 +132,7 @@ Possible structures:
  [:or, 'rgl = 12', 'zgl = lol']]
 # => 'NOT z = 13 AND (mrgl = 2 OR rgl = 22) AND (rgl = 12 OR zgl = lol)'
 ```  
-##### Sub Querry
+###### Sub Querry
 Possible structures:
 - `Constructor` instance
 - `Hash` with `:select` value  
@@ -220,7 +222,7 @@ Possible structures:
   - [table representation](#tables)
   - `Hash`
     - `:on` - [conditions](#conditions)
-    - `:options` - optional - contains `Symbol` or `String` of join type... rename to type?
+    - `:option` - optional - contains `Symbol` or `String` of join type... rename to type?
 - `Array` with combination of possible structures.  
 ```ruby
 join: 'users u ON u.id = m.user_id'
@@ -238,12 +240,12 @@ Possible structures:
 - `String`, `Symbol` just insert it in `"ORDER BY #{structure} "`
 - [SQL function](#sql-function)
 - `Hash`
-  - key - 
+  - key - previsious possible structures.
   - value - options representation
     - `Symbol` - `:last || :first || :asc || :desc`
     - `String` - `'<' || '>'` or smthng else that passed in to `USING`
     - `Array` - with symbols inside
-- `Array` - [columns](#columns) or `Hash`  
+- `Array` - any possible structures  
 ```ruby
 order: 'z.amount DESC' || :name
 # => 'ORDER BY z.amount DESC ' || 'ORDER BY name '
