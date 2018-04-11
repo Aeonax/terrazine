@@ -335,6 +335,7 @@ Except this todo's there is a lot commented todo's inside project.-_-
 - [ ] Delete
 
 ### Tests
+- [ ] Normal structure!!!!
 - [ ] Constructor + Builder
 - [ ] Result
 - [ ] Request

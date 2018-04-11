@@ -52,18 +52,18 @@ describe Terrazine::Constructor do
       @constructor.select select: [:_count, [:_nullif, :connected, true]],
                           from: [:calls, :c],
                           where: 'u.id = c.user_id'
-      expect(@constructor.build_sql).to eq 'SELECT (SELECT COUNT(NULLIF(connected, true)) FROM calls c WHERE u.id = c.user_id  ) '
+      expect(@constructor.build_sql).to eq 'SELECT (SELECT COUNT(NULLIF(connected, true)) FROM calls c WHERE u.id = c.user_id ) '
     end
 
     it 'build big structures' do
       @permanent_c.select _calls_count: { select: [:_count, [:_nullif, :connected, true]],
                                           from: [:calls, :c],
-                                          where: 'u.id = c.user_id' },
+                                          where: { u__id: :c__user_id } },
                           u: [:name, :phone, { _master: [:_nullif, :role, "'master'"] },
                               'u.abilities, u.id', 'birthdate']
       @permanent_c.select o: :client_name
       @permanent_c.select :secure_id
-      expect(@permanent_c.build_sql).to eq "SELECT (SELECT COUNT(NULLIF(connected, true)) FROM calls c WHERE u.id = c.user_id  ) AS calls_count, u.name, u.phone, NULLIF(u.role, 'master') AS master, u.abilities, u.id, u.birthdate, o.client_name, secure_id "
+      expect(@permanent_c.build_sql).to eq "SELECT (SELECT COUNT(NULLIF(connected, true)) FROM calls c WHERE u.id = c.user_id ) AS calls_count, u.name, u.phone, NULLIF(u.role, 'master') AS master, u.abilities, u.id, u.birthdate, o.client_name, secure_id "
     end
 
     it 'build DISTINCT' do
@@ -148,6 +148,17 @@ describe Terrazine::Constructor do
   end
 
   context '`WHERE`' do
-    
+    it 'build simple structure' do
+      @constructor.where ['NOT z = 13',
+                          [:or, 'mrgl = 2', 'rgl = 22'],
+                          [:or, 'rgl = 12', 'zgl = lol']]
+      expect(@constructor.build_sql).to eq 'WHERE NOT z = 13 AND (mrgl = 2 OR rgl = 22) AND (rgl = 12 OR zgl = lol) '
+    end
+
+    it 'build intemidate structure' do
+      @constructor.where [{ role: 'manager', id: [0, 1, 153] },
+                          [:not, [:like, :u__name, 'Aeonax']]]
+      expect(@constructor.build_sql).to eq ['WHERE role = $1 AND id IN ($2) AND NOT u.name LIKE $3 ', ['manager', [0, 1, 153], 'Aeonax']]
+    end
   end
 end
