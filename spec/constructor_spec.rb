@@ -149,7 +149,7 @@ describe Terrazine::Constructor do
 
   context '`WHERE`' do
     it 'build simple structure' do
-      @constructor.where ['NOT z = 13',
+      @constructor.where [[:not, 'z = 13'],
                           [:or, 'mrgl = 2', 'rgl = 22'],
                           [:or, 'rgl = 12', 'zgl = lol']]
       expect(@constructor.build_sql).to eq 'WHERE NOT z = 13 AND (mrgl = 2 OR rgl = 22) AND (rgl = 12 OR zgl = lol) '

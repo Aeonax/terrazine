@@ -116,21 +116,32 @@ Possible structures:
 'users u, (VALUES...), masters m'
 ```   
 ###### Conditions
-Current conditions implementation is sux... -_- Soon i'll change it.  
+Not finished yet...
+Column can be described as `:u__name => 'u.name'` or `:name`
 Possible structures:
-- `String`
+- `String` passes as it is
+- `Hash` represent sql `=` or `IN` if value is `Array`. TODO: `IS` in case of `nil` or `false`
+  - `Symbol` - column name
+  - `Array` - only as value! will be placed in querry params `($1)`.
+  - `String` - will be placed in querry params
 - `Array`
-  - `Symbol` joiner representation, by default `:and`
-  - `String`
+  - first element - `Symbol` operator representation, by default `:and`
+    - `eq` - `=`
+    - `or`, `and`
+    - `in`
+    - `not`
+    - `like`, `ilike`
+    - `reg` - `~`, `reg_i` - `~*`, `reg_f` - `!~`, `reg_fi` - `!~*`
+  - arguments
 - `Array` - holder of any possible structures  
 ```ruby
-[:or, ['NOT z = 13', [:or, 'mrgl = 2', 'rgl = 22']],
-      [:or, 'rgl = 12', "zgl = 'lol'"]]
-# => "(NOT z = 13 AND (mrgl = 2 OR rgl = 22)) OR (rgl = 12 zgl = 'lol')"
-[['NOT z = 13',
- [:or, 'mrgl = 2', 'rgl = 22']],
+[[:not, 'z = 13'],
+ [:or, 'mrgl = 2', 'rgl = 22'],
  [:or, 'rgl = 12', 'zgl = lol']]
 # => 'NOT z = 13 AND (mrgl = 2 OR rgl = 22) AND (rgl = 12 OR zgl = lol)'
+[{ role: 'manager', id: [0, 1, 153] },
+ [:not, [:like, :u__name, 'Aeonax']]]
+#=> 'role = $1 AND id IN ($2) AND NOT u.name LIKE $3', ['manager', [0, 1, 153], 'Aeonax']
 ```  
 ###### Sub Querry
 Possible structures:

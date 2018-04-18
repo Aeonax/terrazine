@@ -14,6 +14,7 @@ module Terrazine
       case structure
       when Array
         key = structure.first
+        return construct_condition(key) if structure.size < 2
         if key.is_a? Symbol
           parentizer send("condition_#{key}", structure.drop(1)), first_level, key
         elsif key.is_a?(String) && key =~ /\?/

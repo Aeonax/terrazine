@@ -3,16 +3,15 @@ require_relative 'builders/conditions'
 
 module Terrazine
   # builds structures in to sql string
-  # TODO: SPLIT!!!
+  # TODO: SPLIT!!! But how-_-
+  # Operators(sql_functions), Predicates, Clauses(select, from...), Expressions(columns, tables)...
+  # they are mixed... everything can contain everything and they must communicate with each other.
+  # And how it can be splitted?
   class Builder
     attr_accessor :sql, :constructor
 
     # https://6ftdan.com/allyourdev/2015/05/02/private-module-methods-in-ruby/
     # TODO: all methods private except get_sql, get_partial_sql ?
-    # build_partial accepts structure and name
-    # and looks like: send "build_#{name}", structure, nil ???
-    # relocate "construct_#{name}" methods in modules and leave here only "build_#{name}"
-    # rename sql-function methods in to "function_#{name}" ?
 
     def initialize
       @params = []
