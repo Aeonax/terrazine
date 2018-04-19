@@ -8,7 +8,6 @@ module Terrazine
   # they are mixed... everything can contain everything and they must communicate with each other.
   # And how it can be splitted?
   class Builder
-    attr_accessor :sql, :constructor
 
     # https://6ftdan.com/allyourdev/2015/05/02/private-module-methods-in-ruby/
     # TODO: all methods private except get_sql, get_partial_sql ?
