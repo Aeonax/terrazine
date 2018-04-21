@@ -2,6 +2,14 @@ module Terrazine
   class Builder
     private
 
+    # now it doesnt use Predicates
+
+    def build_operator(structure, prefix = nil)
+      function = structure.first.to_s.sub(/^_/, '')
+      arguments = structure.drop(1)
+      send(function, arguments, prefix)
+    end
+
     def params(arguments, _)
       if arguments.count > 1
         arguments.map { |i| build_param i }

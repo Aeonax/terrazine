@@ -339,7 +339,6 @@ Data will be presented as `Array` if `rows > 1` or `options[:array]` present.
 Except this todo's there is a lot commented todo's inside project.-_-
 - [x] Parse data like arrays, booleans, nil to SQL. (:_params function -\_-)
 - [x] Relocate functions builder in to class, finally I found how it can be done nice=))
-- [ ] Rename functions methods and do method_missing for them that will just pass arguments.
 - [ ] should I bother with extra spaces?
 - [ ] Insert
 - [ ] Update
@@ -352,9 +351,10 @@ Except this todo's there is a lot commented todo's inside project.-_-
 - [ ] Request
 
 ### Meditate
+- [ ] builder structure... another possibility to split it?
 - [ ] from
 - [ ] join !!!
-- [ ] where !!!!!! Supporting rails like syntax with hash?
+- [x] where !!!!!! Supporting rails like syntax with hash?
 - [ ] supporting another databases
 
 ## Contact

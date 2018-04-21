@@ -3,8 +3,13 @@ module Terrazine
     # TODO: :between, :!=, :>, :<, :>=, :<=
     # Done: :eq, :not, :or, :and, :like, :ilike, :reg_#{type}, :in
 
+    # now it doesn't use Operators
+    # uses Expressions
+
+    private
+
     # TODO? conditions like [:eq :name :Aeonax]
-    def build_conditions(structure)
+    def build_predicates(structure)
       construct_condition(structure, true)
     end
 
@@ -126,33 +131,5 @@ module Terrazine
     def condition_reg_fi(structure)
       condition_pattern structure, '!~*'
     end
-
-=begin
-    def construct_condition(structure, joiner = :and, level = nil)
-      case structure
-      when Array
-        key = structure.first
-        # AND, OR support
-        if key.is_a? Symbol
-          res = structure.drop(1).map { |i| construct_condition(i) }.join " #{key} ".upcase
-          level ? res : "(#{res})"
-        elsif key =~ /\?/
-          # Sub Queries support - ['rgl IN ?', {...}]
-          if [Hash, Constructor].include?(structure.second.class)
-            key.sub(/\?/, "(#{build_sql(structure.second)})")
-          else
-            key.sub(/\?/, build_param(structure.second))
-          end
-        else
-          res = structure.map { |i| construct_condition(i) }.join " #{joiner} ".upcase
-          level ? res : "(#{res})"
-        end
-      when Hash
-        iterate_hash(structure) { |k, v|  }
-      when String
-        structure
-      end
-    end
-=end
   end
 end
