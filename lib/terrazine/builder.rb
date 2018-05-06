@@ -7,7 +7,7 @@ require_relative 'builders/params'
 module Terrazine
   # builds structures in to sql string
   # TODO: SPLIT!!! But how-_-
-  # Operators(sql_functions), Predicates, Clauses(select, from...), Expressions(columns, tables)...
+  # Operators(sql_functions), Predicates, Clauses(select, from...), Expressions(columns, tables), Params...
   # they are mixed... everything can contain everything and they must communicate with each other.
   # And how it can be splitted?
   class Builder
@@ -19,14 +19,14 @@ module Terrazine
     end
 
     # get complete sql structure for constructor.
-    def get_sql(structure)
-      get_partial_sql structure, key: 'sql'
-      # wrap_result build_sql(structure)
+    def get_sql(structure, options)
+      # get_partial_sql structure, key: 'sql'
+      wrap_result send("build_#{options[:key] || 'sql'}", structure)
     end
 
-    def get_partial_sql(structure, options)
-      wrap_result send("build_#{options[:key]}", structure)
-    end
+    # def get_partial_sql(structure, options)
+    # wrap_result send("build_#{options[:key]}", structure)
+    # end
 
     private
 
@@ -35,11 +35,21 @@ module Terrazine
       structure = structure.is_a?(Constructor) ? structure.structure : structure
       sql = ''
       [:with, :union, :select, :insert, :update, :delete, :set, :from,
-       :join, :where, :group, :order, :limit, :offset].each do |i|
+       :join, :where, :returning, :group, :order, :limit, :offset].each do |i|
          next unless structure[i]
          sql += send("build_#{i}", structure[i], structure)
        end
       sql
+    end
+
+    def method_missing(name, *args)
+      /(?<type>[^_]+)_(?<action>\w+)/ =~ name
+      # arguments = [action]
+      if type && respond_to?("#{type}_missing", true)
+        send "#{type}_missing", action, *args
+      else
+        super
+      end
     end
 
     # TODO

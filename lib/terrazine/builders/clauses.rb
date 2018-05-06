@@ -38,6 +38,15 @@ module Terrazine
       end
     end
 
+    # TODO!
+    def build_update(structure, _)
+      "UPDATE #{construct_update structure} "
+    end
+
+    def build_returning(structure, _)
+      "RETURNING #{build_columns structure}"
+    end
+
     def build_where(structure, _)
       "WHERE #{build_predicates(structure)} "
     end
@@ -76,6 +85,30 @@ module Terrazine
         'DISTINCT '
       else
         "DISTINCT ON(#{build_columns structure}) "
+      end
+    end
+
+    def construct_update(structure)
+      case structure
+      when Array
+        table = build_tables structure.first
+        "#{table} SET #{construct_set structure.last}"
+      when String
+        structure
+      else
+        raise "Undefined structure for `UPDATE`: #{structure}"
+      end
+    end
+
+    # TODO: (..., ...) = (..., ...)
+    def construct_set(structure)
+      case structure
+      when Hash
+        iterate_hash(structure) { |k, v| "#{build_columns k} = #{build_columns v}" }
+      when String
+        structure
+      else
+        raise "Undefined structure for `UPDATE`: #{structure}"
       end
     end
 

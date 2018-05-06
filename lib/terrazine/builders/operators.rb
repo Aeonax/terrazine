@@ -5,12 +5,17 @@ module Terrazine
     # now it doesnt use Predicates
 
     def build_operator(structure, prefix = nil)
-      function = structure.first.to_s.sub(/^_/, '')
+      operator = structure.first.to_s.sub(/^_/, '')
       arguments = structure.drop(1)
-      send(function, arguments, prefix)
+      # puts operator
+      send("operator_#{operator}", arguments, prefix)
     end
 
-    def params(arguments, _)
+    def operator_missing(name, arguments, prefix)
+      "#{name}(#{build_columns arguments, prefix})"
+    end
+
+    def operator_params(arguments, _)
       if arguments.count > 1
         arguments.map { |i| build_param i }
       else
@@ -19,7 +24,7 @@ module Terrazine
     end
 
     # without arguments smthng like this - "COUNT(#{prefix + '.'}*)"
-    def count(arguments, prefix)
+    def operator_count(arguments, prefix)
       if arguments.count > 1
         arguments.map { |i| "COUNT(#{build_columns(i, prefix)})" }.join ', '
       else
@@ -27,11 +32,11 @@ module Terrazine
       end
     end
 
-    def nullif(arguments, prefix)
+    def operator_nullif(arguments, prefix)
       "NULLIF(#{build_columns(arguments.first, prefix)}, #{arguments[1]})"
     end
 
-    def array(arguments, prefix)
+    def operator_array(arguments, prefix)
       if [Hash, Constructor].include?(arguments.first.class)
         "ARRAY(#{build_sql arguments.first})"
       else # TODO? condition and error case
@@ -39,17 +44,17 @@ module Terrazine
       end
     end
 
-    def avg(arguments, prefix)
+    def operator_avg(arguments, prefix)
       "AVG(#{build_columns(arguments.first, prefix)})"
     end
 
-    def values(arguments, _)
+    def operator_values(arguments, _)
       values = arguments.first.first.is_a?(Array) ? arguments.first : [arguments.first]
       values.map! { |i| "(#{build_columns i})" }
       "(VALUES#{values.join ', '}) AS #{arguments[1]} (#{build_columns arguments.last})"
     end
 
-    def case(arguments, _)
+    def operator_case(arguments, _)
       else_val = "ELSE #{arguments.pop} " unless arguments.last.is_a? Array
       conditions = arguments.map { |i| "WHEN #{i.first} THEN #{i.last}" }.join ' '
       "CASE #{conditions} #{else_val}END"

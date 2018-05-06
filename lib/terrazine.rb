@@ -28,12 +28,19 @@ module Terrazine
     Constructor.new structure
   end
 
-  def self.build_sql(structure)
+  def self.build_sql(structure, options = {})
     case structure
-    when Hash
-      new_constructor(structure).build_sql
+    when Hash # , Array
+      new_constructor(structure).build_sql options
     when Constructor
-      structure.build_sql
+      structure.build_sql options
+    when Array
+      # TODO!!!!!
+      if structure.first.is_a?(String) && structure.second.is_a?(Array)
+        structure
+      else
+        new_constructor(structure).build_sql options
+      end
     when String
       structure
     else

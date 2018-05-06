@@ -110,8 +110,8 @@ module Terrazine
     # constructor.build_sql
     # => 'SELECT .... FROM ...'
     # => ['SELECT .... FROM .... WHERE id = $1', [22]]
-    def build_sql
-      Builder.new.get_sql @structure
+    def build_sql(options = {})
+      Builder.new.get_sql @structure, options
     end
   end
 end

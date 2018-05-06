@@ -161,4 +161,20 @@ describe Terrazine::Constructor do
       expect(@constructor.build_sql).to eq ['WHERE role = $1 AND id IN ($2) AND NOT u.name LIKE $3 ', ['manager', [0, 1, 153], 'Aeonax']]
     end
   end
+
+  context 'Operators' do
+    it 'build missing operator' do
+      sql = Terrazine.build_sql([:_to_json,
+                                 [:_array_agg,
+                                  { select: [:id, :title,
+                                             { _copies_in_stock:
+                                                 { select: [:_count, :id],
+                                                   from: [:book_copies, :b_c],
+                                                   where: ['b_c.shop_id = s.id',
+                                                           'b_c.book_id = b.id',
+                                                           'NOT b_c.sold = TRUE'] } }] }]],
+                                key: 'operator')
+      expect(sql).to eq 'to_json(array_agg((SELECT id, title, (SELECT COUNT(id) FROM book_copies b_c WHERE b_c.shop_id = s.id AND b_c.book_id = b.id AND NOT b_c.sold = TRUE ) AS copies_in_stock )))'
+    end
+  end
 end

@@ -50,8 +50,13 @@ module Terrazine
     end
 
     def construct_condition_value(structure)
-      if structure.is_a? Symbol
+      case structure
+      when Symbol
         condition_column(structure)
+      when TrueClass, FalseClass
+        structure.to_s.upcase
+      when nil
+        'NULL'
       else
         build_param structure
       end
@@ -67,8 +72,14 @@ module Terrazine
 
     #### Condition builders
 
+    # supporting eq if there is no array inside
     def condition_not(structure)
-      "NOT #{construct_condition structure.flatten(1)}"
+      value = if structure.count == 1
+                construct_condition structure.flatten(1)
+              else
+                condition_eq structure
+              end
+      "NOT #{value}"
     end
 
     def conditions_joiner(structure, joiner)
@@ -83,13 +94,23 @@ module Terrazine
       conditions_joiner structure, 'or'
     end
 
-    def condition_in(column, value)
-      "#{construct_condition_value column} IN (#{build_param value})"
+    def condition_in(structure)
+      values = case structure.second
+               when Hash, Constructor
+                 build_sql structure.second
+               else
+                 build_param structure.second
+               end
+      "#{construct_condition_value structure.first} IN (#{values})"
     end
 
     def conditions_construct_eq(column, value)
-      return condition_in(column, value) if value.is_a? Array
+      return condition_in([column, value]) if value.is_a? Array
       "#{construct_condition_value column} = #{construct_condition_value value}"
+    end
+
+    def condition_is(structure)
+      "#{construct_condition_value structure.first} IS #{construct_condition_value structure.second}"
     end
 
     def condition_eq(structure)
@@ -101,6 +122,10 @@ module Terrazine
       else
         raise "Undefinded structure: #{structure} for equality condition builder"
       end
+    end
+
+    def condition_between(structure)
+      "BETWEEN #{construct_condition structure}"
     end
 
     def condition_pattern(structure, pattern)

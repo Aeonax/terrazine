@@ -340,6 +340,7 @@ Except this todo's there is a lot commented todo's inside project.-_-
 - [x] Parse data like arrays, booleans, nil to SQL. (:_params function -\_-)
 - [x] Relocate functions builder in to class, finally I found how it can be done nice=))
 - [ ] should I bother with extra spaces?
+- [ ] logger in config
 - [ ] Insert
 - [ ] Update
 - [ ] Delete
@@ -356,6 +357,13 @@ Except this todo's there is a lot commented todo's inside project.-_-
 - [ ] join !!!
 - [x] where !!!!!! Supporting rails like syntax with hash?
 - [ ] supporting another databases
+
+## Updates:
+#### 0.0.3
+- Expand predicates syntax
+- added support of multiple rows for `VALUES`
+- `ORDER` structure
+- scary tests-_-
 
 ## Contact
 You can write me your suggestions for improving the syntax, wishes, things that you think are missing here.  

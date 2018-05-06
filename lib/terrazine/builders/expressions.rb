@@ -12,12 +12,13 @@ module Terrazine
       when Array
         if check_alias(structure.first) # VALUES function or ...?
           build_operator(structure)
-        # if it's a array with strings/values
-        elsif structure.select { |i| i.is_a? Array }.empty? # array of table_name and alias
-          structure.join ' '
-        else # array of tables/values
-          structure.map { |i| i.is_a?(Array) ? build_tables(i) : i }.join(', ')
+        # if it's a array with strings/values || array of tables/values
+        else
+          joiner = structure.select { |i| i.is_a? Array }.empty? ? ' ' : ', '
+          structure.map { |i| build_tables i }.join joiner
         end
+      when Hash
+        "(#{build_sql structure})"
       when String, Symbol
         structure
       else
