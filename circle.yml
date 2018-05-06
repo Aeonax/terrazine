@@ -1,0 +1,11 @@
+machine:
+  ruby:
+    version: 2.3.1
+
+checkout:
+  post:
+    - bundle
+
+test:
+  override:
+    - bundle exec rspec
