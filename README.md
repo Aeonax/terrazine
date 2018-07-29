@@ -16,7 +16,10 @@ Get result and access any returned data rails like syntax.
 This was my first meeting with OOP... Now it's scary inside, but it can grow in shiny gem in future=)
 
 #### Readiness
-I'm doing this gem for my own use. And I use it on our prod for constructing huge SQL SELECT queries and it works really well^\_^ BUT. Now it really unstable and some parts will be remade in future... So if you accidentally got lost and got on this page, then I advise you to use this gem only for informational purposes, or on your own risk=)
+I'm doing this gem for my own use. And I use it on our prod for constructing huge SQL SELECT queries and it works really well^\_^ BUT. Now it really unstable and some parts will be remade in future... So if you accidentally got lost and got on this page, then I advise you to use this gem only for informational purposes, or on your own risk=)  
+
+#### DB adapters
+Now supports only Postgresql.
 
 ## Usage
 #### Initialization
