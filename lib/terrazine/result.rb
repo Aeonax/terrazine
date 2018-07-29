@@ -63,7 +63,8 @@ module Terrazine
       self
     end
 
-    def_delegators :@rows, :each, :each_with_index, :first, :last, :map, :count, :present?
+    def_delegators :@rows, :each, :each_with_index, :first, :last,
+                           :map, :count, :present?, :empty?
     def_delegator :@fields, :index
   end
 end

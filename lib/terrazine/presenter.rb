@@ -1,6 +1,7 @@
 module Terrazine
   # convinient for API presenter
   class Presenter
+    # just wtf is going on here...
     class << self
       # TODO: delete fields
       def present(result, options)

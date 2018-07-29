@@ -32,6 +32,7 @@ module Terrazine
       end
     end
 
+    # arguments[1] relocate in to :_params?
     def operator_nullif(arguments, prefix)
       "NULLIF(#{build_columns(arguments.first, prefix)}, #{arguments[1]})"
     end
