@@ -1,8 +1,12 @@
+# frozen_string_literal: true
+
 module Terrazine
+  # Wrapper above structure, help to construct structures, store them
   class Constructor
     attr_reader :structure, :params
-    def initialize(structure = {})
+    def initialize(structure = {}, options = {})
       @structure = structure
+      @options = options
     end
 
     # TODO? join hash inside array?

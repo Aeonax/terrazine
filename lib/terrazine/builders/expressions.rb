@@ -1,9 +1,5 @@
 module Terrazine
   class Builder
-
-    # doesn't use Predicates
-    # use Operators, Expressions
-
     private
 
     # TODO: split
