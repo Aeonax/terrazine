@@ -1,7 +1,16 @@
 # frozen_string_literal: true
 
+require_relative 'compiler_params'
+require_relative 'compilers/base'
+require_relative 'compilers/clause'
+require_relative 'compilers/expression'
+
 module Terrazine
   # Public interface for interaction with Compilers
+  # should handle:
+  # - single entity compilation, like `.._clause(:where, [])`
+  # - full entity compilation, like `.._clauses(with: .., select: ..)`
+  # - should be available for inner and outer use... How it could be done with beauty...-_-
   module Compiler
     # { select: ..., from: ... }
     def compile_sql(structure, options = {})
@@ -10,27 +19,24 @@ module Terrazine
     alias compile_clauses compile_sql
 
     # :select, { u: [:name, :email] }
-    def compile_clause(name, &values)
+    def compile_clause(name, *values)
       Compilers::Clause.new(compiler_params).send(name, values)
     end
 
-    # select: {..}, from: [...]
-    # def compile_clauses(structure, options = {})
-    #   Compilers::Clause.new(compiler_options(options)).compile(structure)
-    # end
-
-    # :eq, :u__name, 'Aeonax'
-    def compile_condition(name, &values)
+    # Compile single condition
+    # `compile_condition(:eq, :u__name, 'Aeonax') #=> "u.name = 'Aeonax'"`
+    # with sub query example would be more reliable...
+    def compile_condition(name, *values)
       Compilers::Condition.new(compiler_params).send(name, values)
     end
 
-    # { u__name: 'Aeonax' }
+    # Compile conditions structure
     def compile_conditions(structure, options = {})
       Compilers::Condition.new(compiler_options(options, structure)).compile
     end
 
     # (:sum, :amount, :cost)
-    def compile_operator(name, &values)
+    def compile_operator(name,*values)
       Compilers::Operator.new(compiler_params).send(name, values)
     end
 
@@ -40,6 +46,9 @@ module Terrazine
       Compilers::Expression.new(compiler_options(options, structure)).compile
     end
 
+    module_function :compile_sql, :compile_clause, :compile_clauses,
+                    :compile_expressions
+
     private
 
     def compiler_params
@@ -47,9 +56,10 @@ module Terrazine
     end
 
     def compiler_options(options = {}, structure = nil)
-      options[:params] ||= compiler_params
+      options[:params] ||= CompilerParams.new
       options[:structure] ||= structure
       options
     end
+    module_function :compiler_params, :compiler_options
   end
 end

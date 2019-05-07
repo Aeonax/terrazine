@@ -1,48 +1,48 @@
 # frozen_string_literal: true
 
+require_relative 'advanced_clauses/join'
+require_relative 'advanced_clauses/with'
+
 module Terrazine
   module Compilers
     class Clause < Base
-      def compile(*structure)
+      def compile(structure = initial_structure)
         sql = ''
 
-        # shit... I wanna skip that iteration so much...
-        # how it could be relocated in to separate method without
-        # raise in that method or variable && dublicated conditions here...
-        union_data = initial_or_(structure, :union)
+        union_data = structure[:union]
         return union(*union_data) if union_data
 
         [:with, :select, :insert, :update, :delete, :set, :from, :join,
          :having, :where, :returning, :group, :order, :limit, :offset].each do |i|
-          next unless initial_or_(structure, i)
-          sql += send(i)
+          sql += send(i, structure[i]) if structure[i]
         end
         sql
       end
 
       def with(*structure)
-        AdvancedCompilers::With.new(options).build(initial_or_(structure, :with))
+        AdvancedCompilers::With.new(@options).build(structure)
       end
 
-      def union(*structure)
-        return unless structure
+      def union(structure)
+        return if structure.empty?
         structure.map { |s| compile(s) }.join ' UNION '
       end
 
+      # {select: { a: [:z] }}
       def select(*structure)
-        # select_data = strucutre.empty? ? initial_structure[:select] : structure
-        "SELECT #{distinct(d_structure)}#{expressions(initial_or_(structure, :select))} "
+        "SELECT #{distinct}#{expressions(initial_or_(structure, :select))} "
       end
 
-      def distinct(*structure)
-        data = initial_or_(structure, :distinct)
-        return unless data
-        return 'DISTINCT ' if data.first.is_a?(TrueClass)
+      # { distinct: {a: [:z]} }
+      def distinct(*data)
+        structure = initial_or_(data, :distinct)
+        return if structure.nil? || structure.empty?
+        return 'DISTINCT ' if structure.first.is_a?(TrueClass)
 
-        "DISTINCT ON(#{expressions data}) "
+        "DISTINCT ON(#{expressions(structure)}) "
       end
 
-      # For use via `Compiler.compile_clause(:distinct_select, {...}, true)`
+      # For use via `Compiler.compile_clause(:distinct_select, {...}, field(s))`
       def distinct_select(select_structure, distinct_structure = true)
         select(select_structure, distinct_structure)
       end
@@ -62,7 +62,7 @@ module Terrazine
 
       def returning(*structure)
         # TODO? expressions may be redundant and columns parsing would be enought
-        "RETURNING #{expressions(initial_or_(structure, :returning))}"
+        "RETURNING #{expressions(initial_or_(structure, :returning))} "
       end
 
       def where(*structure)
