@@ -4,6 +4,7 @@ require_relative 'compiler_params'
 require_relative 'compilers/base'
 require_relative 'compilers/clause'
 require_relative 'compilers/expression'
+require_relative 'compilers/operator'
 
 module Terrazine
   # Public interface for interaction with Compilers
@@ -36,8 +37,17 @@ module Terrazine
     end
 
     # (:sum, :amount, :cost)
-    def compile_operator(name,*values)
+    def compile_operator(name, *values)
       Compilers::Operator.new(compiler_params).send(name, values)
+    end
+
+    def compile_operator_with_prefix(name, prefix, *values)
+      Compilers::Operator.new(compiler_options({ prefix: prefix }, structure))
+                         .send(name, values)
+    end
+
+    def compile_operators(structure, options = {})
+      Compilers::Operator.new(compiler_options(options, structure)).compile
     end
 
     # u: [:name, :email], _feedbacks_count: {select ...},
@@ -47,7 +57,7 @@ module Terrazine
     end
 
     module_function :compile_sql, :compile_clause, :compile_clauses,
-                    :compile_expressions
+                    :compile_expressions, :compile_operators
 
     private
 

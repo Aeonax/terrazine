@@ -12,7 +12,7 @@ module Terrazine
         if alias?(structure.first)
           operators(structure, prefix)
         else
-          structure.map { |i| call_multimethod(i, prefix) }.join ', '
+          map_and_join(structure) { |i| call_multimethod(i, prefix) }
         end
       end
 

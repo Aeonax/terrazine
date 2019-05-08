@@ -68,6 +68,10 @@ module Terrazine
         @options[:params] ||= []
       end
 
+      def add_param
+        # TODO!
+      end
+
       # for array args like `*structure` only!!!
       def initial_or_(structure, name)
         structure.empty? ? initial_structure[name] : structure
@@ -75,6 +79,10 @@ module Terrazine
 
       def alias?(val)
         val.to_s =~ /^_/
+      end
+
+      def hash_is_sub_query?(structure)
+        structure[:select]
       end
 
       # update ruby for delete_prefix? =)
@@ -92,6 +100,14 @@ module Terrazine
 
       def clauses(data)
         Compiler.compile_clauses(data, @options.except(:structure))
+      end
+
+      def operators(data, prefix)
+        Compiler.compile_operators(data, compiler_options(prefix: prefix))
+      end
+
+      def compiler_options(options)
+        @options.merge(options).except(:structure)
       end
     end
   end

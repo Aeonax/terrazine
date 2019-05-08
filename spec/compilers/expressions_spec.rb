@@ -63,4 +63,18 @@ describe 'Compilers::Expression' do
     let(:result) { '(SELECT * )' }
     it { is_expected.to eq result }
   end
+
+  context 'Advanced' do
+    let(:structure) do
+      { u: [:name, :email],
+        f: { _f_count: [:_count, :id] },
+        _sub: { select: true },
+        _cons: init_constructor(select: true) }
+    end
+    let(:result) do
+      'u.name, u.email, COUNT(f.id) AS f_count, (SELECT * ) AS sub, ' \
+      '(SELECT * ) AS cons'
+    end
+    it { is_expected.to eq result }
+  end
 end
