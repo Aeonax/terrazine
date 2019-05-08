@@ -90,7 +90,8 @@ module Terrazine
 
       def wrap_in_select(operator, structure)
         if structure.first.is_a?(Hash) && hash_is_sub_query?(structure.first)
-          expressions(select: [operator, :item], from: [structure, :item])
+          expressions(select: missing_method_format(operator, :item),
+                      from: [structure, :item])
         else
           missing_method_format(operator, structure)
         end

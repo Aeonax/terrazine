@@ -5,6 +5,7 @@ require_relative 'compilers/base'
 require_relative 'compilers/clause'
 require_relative 'compilers/expression'
 require_relative 'compilers/operator'
+require_relative 'compilers/table'
 
 module Terrazine
   # Public interface for interaction with Compilers
@@ -56,8 +57,12 @@ module Terrazine
       Compilers::Expression.new(compiler_options(options, structure)).compile
     end
 
+    def compile_tables(structure, options = {})
+      Compilers::Table.new(compiler_options(options, structure)).compile
+    end
+
     module_function :compile_sql, :compile_clause, :compile_clauses,
-                    :compile_expressions, :compile_operators
+                    :compile_expressions, :compile_operators, :compile_tables
 
     private
 

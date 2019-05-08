@@ -106,6 +106,10 @@ module Terrazine
         Compiler.compile_operators(data, compiler_options(prefix: prefix))
       end
 
+      def tables(data)
+        Compiler.compile_tables(data, @options.except(:structure))
+      end
+
       def compiler_options(options)
         @options.merge(options).except(:structure)
       end

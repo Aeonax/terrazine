@@ -109,7 +109,7 @@ describe 'Compilers::Operator' do
   context 'JSON_AGG' do
     context 'with sub query' do
       let(:structure) { [:_json_agg, { select: true }] }
-      let(:result) { '(SELECT JSON_AGG(item) FROM (SELECT * ) AS item) ' }
+      let(:result) { '(SELECT JSON_AGG(item) FROM (SELECT * ) AS item )' }
       it { is_expected.to eq result }
     end
 
