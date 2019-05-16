@@ -6,31 +6,63 @@ module Terrazine
       class Values < Compilers::Base
         # TODO: it is clause?? Should i support Order, limit....?
         def build(structure)
-          "VALUES #{call_multimethod(structure)}"
-        end
-
-        # {columns: [], as: :t, values: [values]}
-        # [values] || [[], []] || 1 || true || ...
-        assign_multimethod(Array) do |structure|
-          if [Array, Hash, String].include?(structure.first.class)
-            map_and_join(structure) { |i| call_multimethod(i) }
+          content = call_multimethod(structure)
+          if @wrap
+            "VALUES #{value_pattern(content)}"
           else
-            "(#{map_and_join(structure) { |i| to_sql(i) }})"
+            "VALUES #{content}"
           end
         end
 
+        private
+
+        def after_initialize_callback
+          @wrap = true
+        end
+
+        def value_pattern(value)
+          "(#{value})"
+        end
+
+        # [something]
+        # => (parsed)
+        # [[something], [something_2]]
+        # => (parsed_something), (parsed_something_2)
+        assign_multimethod(Array) do |structure|
+          map_and_join(structure) do |i|
+            if i.is_a?(Array)
+              @wrap = false
+              value_pattern(call_multimethod(i))
+            else
+              call_multimethod(i)
+            end
+          end
+        end
+
+        # {columns: [], as: :t, values: [values]}
+        # => "(parsed_values) AS t (parsed_columns)"
         assign_multimethod(Hash) do |structure|
-          "#{call_multimethod(structure[:values])} " \
-          "AS #{structure[:as]} " \
-          "(#{expressions(structure[:columns])})"
+          content = "#{call_multimethod(structure[:values])} " \
+                    "AS #{structure[:as]} " +
+                    value_pattern(expressions(structure[:columns]))
+          @wrap = false
+          content
         end
 
+        # "Aeonax" => "'Aeonax'"
+        # "_something" => "something"
         assign_multimethod(String) do |structure|
-          structure
+          if alias?(structure)
+            @wrap = false
+            value_pattern(clear_alias(structure))
+          else
+            to_sql(structure)
+          end
         end
 
+        # Take a look on `to_sql` method
         assign_default do |structure|
-          "(#{to_sql(structure)})"
+          to_sql(structure)
         end
       end
     end

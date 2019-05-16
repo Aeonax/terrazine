@@ -71,32 +71,39 @@ describe 'Compilers::Operator' do
   context 'VALUES' do
     context 'Array' do
       context 'of Arrays' do
-        let(:structure) { [:_values, [true], [false]] }
-        let(:result) { 'VALUES (TRUE), (FALSE)' }
+        let(:structure) { [:_values, [true], ['Mrgl'], [nil]] }
+        let(:result) { "VALUES (TRUE), ('Mrgl'), (NULL)" }
         it { is_expected.to eq result }
       end
 
       context 'of values' do
-        let(:structure) { [:_values, true, false] }
-        let(:result) { 'VALUES (TRUE, FALSE)' }
+        let(:structure) { [:_values, true, 'Mrgl', nil] }
+        let(:result) { "VALUES (TRUE, 'Mrgl', NULL)" }
         it { is_expected.to eq result }
       end
     end
 
     context 'Hash' do
       let(:structure) do
-        [:_values, { values: [true, 1],
+        [:_values, { values: [[true, 1], [false, 2], '_NULL, 0'],
                      as: :t,
                      columns: [:bool, :int] }]
       end
-      let(:result) { 'VALUES (TRUE, 1) AS t (bool, int)' }
+      let(:result) { 'VALUES (TRUE, 1), (FALSE, 2), (NULL, 0) AS t (bool, int)' }
       it { is_expected.to eq result }
     end
 
     context 'String' do
-      let(:structure) { [:_values, '(something?)'] }
-      let(:result) { 'VALUES (something?)' }
-      it { is_expected.to eq result }
+      context 'as raw sql' do
+        let(:structure) { [:_values, '_something?'] }
+        let(:result) { 'VALUES (something?)' }
+        it { is_expected.to eq result }
+      end
+      context 'as value' do
+        let(:structure) { [:_values, 'something?'] }
+        let(:result) { "VALUES ('something?')" }
+        it { is_expected.to eq result }
+      end
     end
   end
 

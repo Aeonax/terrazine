@@ -8,13 +8,8 @@ module Terrazine
       end
 
       assign_multimethod(Array) do |structure|
-        if alias?(structure.first) # VALUES function or ...?
-          "(#{operators(structure)})"
-        elsif structure.select { |i| i.is_a? Array }.empty?
-          map_and_join(structure) { |i| call_multimethod i }
-        else
-          map_and_join(structure, ' AS ') { |i| call_multimethod i }
-        end
+        next "(#{operators(structure)})" if alias?(structure.first)
+        map_and_join(structure, ' AS ') { |i| call_multimethod i }
       end
 
       assign_multimethod(Hash) do |structure|
@@ -25,9 +20,7 @@ module Terrazine
         call_multimethod(structure.structure)
       end
 
-      assign_multimethod([String, Symbol]) do |structure|
-        structure
-      end
+      assign_multimethod([String, Symbol], &:to_s)
 
       assign_default do |structure|
         raise "Undefined structure for FROM - #{structure}"

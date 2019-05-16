@@ -25,7 +25,7 @@ module Terrazine
       def initialize(options)
         @options = options
         # @structure = options[:structure] ? options.delete(:structure) : {}
-        # after_initialize
+        after_initialize_callback
       end
 
       def build_param(param)
@@ -54,7 +54,7 @@ module Terrazine
 
       private
 
-      # def after_initialize; end
+      def after_initialize_callback; end
 
       def initial_structure
         @options[:structure] || {}
@@ -102,7 +102,7 @@ module Terrazine
         Compiler.compile_clauses(data, @options.except(:structure))
       end
 
-      def operators(data, prefix)
+      def operators(data, prefix = @options[:prefix])
         Compiler.compile_operators(data, compiler_options(prefix: prefix))
       end
 
