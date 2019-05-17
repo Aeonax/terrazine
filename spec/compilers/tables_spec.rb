@@ -8,8 +8,8 @@ describe 'Compilers::Table' do
   # God damn it... everything wrong...-_-
   context 'Array' do
     context 'as Operator' do
-      let(:structure) { [:_values, 'Aeonax'] }
-      let(:result) { "(VALUES ('Aeonax'))" }
+      let(:structure) { { values: 'Aeonax' } }
+      let(:result) { "(VALUES ('Aeonax') )" }
       it { is_expected.to eq result }
     end
 

@@ -2,8 +2,7 @@
 
 module Terrazine
   module Compilers
-    module AdvancedCompilers
-      # relays on build_..., to_sql
+    module AdvancedClauses
       class Join < Compilers::Base
         def build(structure)
           case structure

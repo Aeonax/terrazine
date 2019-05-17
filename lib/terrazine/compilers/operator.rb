@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'advanced_operators/values'
+require_relative 'advanced_operators/arrays'
 
 module Terrazine
   module Compilers
@@ -39,34 +39,19 @@ module Terrazine
         "#{to_sql(arguments[1])})"
       end
 
-      # TODO: advanced?
       def array(arguments)
-        argument = arguments.first
-        case argument
-        when Hash
-          if argument[:select]
-            "ARRAY(#{clauses(argument)})"
-          else
-            "ARRAY[#{expressions(arguments)}]"
-          end
-        when Constructor
-          "ARRAY(#{clauses(argument.structure)})"
-        else
-          "ARRAY[#{expressions(arguments)}]"
-        end
+        AdvancedOperators::Arrays.new(@options).build(arguments.first)
       end
 
       def avg(arguments)
         "AVG(#{expressions(arguments.first)})"
       end
 
-      def values(arguments)
-        AdvancedOperators::Values.new(@options).build(arguments)
-      end
-
       def missing_method_format(method, structure)
         "#{method.upcase}(#{expressions(structure)})"
       end
+
+      private
 
       def method_missing(operator, *structure)
         if structure.empty?
@@ -77,8 +62,6 @@ module Terrazine
           missing_method_format(operator, structure)
         end
       end
-
-      private
 
       def prefix
         @options[:prefix]

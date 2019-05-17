@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'advanced_clauses/join'
+require_relative 'advanced_clauses/values'
 require_relative 'advanced_clauses/with'
 
 module Terrazine
@@ -8,11 +9,12 @@ module Terrazine
     class Clause < Base
       def compile(structure = initial_structure)
         sql = ''
+        structure = structure.structure if constructor?(structure)
 
         union_data = structure[:union]
         return union(*union_data) if union_data
 
-        [:with, :select, :insert, :update, :delete, :set, :from, :join,
+        [:with, :select, :insert, :values, :update, :delete, :set, :from, :join,
          :having, :where, :returning, :group, :order, :limit, :offset].each do |i|
           sql += send(i, structure[i]) if structure[i]
         end
@@ -20,7 +22,7 @@ module Terrazine
       end
 
       def with(*structure)
-        AdvancedCompilers::With.new(@options).build(structure)
+        AdvancedClauses::With.new(@options).build(structure)
       end
 
       def union(structure)
@@ -47,12 +49,16 @@ module Terrazine
         select(select_structure, distinct_structure)
       end
 
+      def values(*structure)
+        AdvancedClauses::Values.new(@options).build(initial_or_(structure, :join))
+      end
+
       def from(*structure)
         "FROM #{tables(initial_or_(structure, :from))} "
       end
 
       def join(*structure)
-        AdvancedCompilers::Join.new(options).build(initial_or_(structure, :join))
+        AdvancedClauses::Join.new(options).build(initial_or_(structure, :join))
       end
 
       # TODO!!!
@@ -74,7 +80,7 @@ module Terrazine
       end
 
       def order(*structure)
-        AdvancedCompilers::Order.new(options).build(initial_or_(structure, :order))
+        AdvancedClauses::Order.new(options).build(initial_or_(structure, :order))
       end
 
       def limit(count)

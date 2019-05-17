@@ -55,8 +55,20 @@ describe 'Compilers::Operator' do
       end
 
       context 'not Hash' do
-        let(:structure) { [:_array, [:name, true]] }
-        let(:result) { 'ARRAY[name, *]' }
+        let(:structure) { [:_array, [:name, true, [:_count]]] }
+        let(:result) { 'ARRAY[name, *, COUNT(*)]' }
+        it { is_expected.to eq result }
+      end
+
+      context 'nested' do
+        let(:structure) { [:_array, [[:mrgl, :rgl], [:name, true]]] }
+        let(:result) { 'ARRAY[[mrgl, rgl], [name, *]]' }
+        it { is_expected.to eq result }
+      end
+
+      context 'structure like nested' do
+        let(:structure) { [:_array, [[:_count], [:_count, :id]]] }
+        let(:result) { 'ARRAY[COUNT(*), COUNT(id)]' }
         it { is_expected.to eq result }
       end
     end
@@ -66,45 +78,6 @@ describe 'Compilers::Operator' do
     let(:structure) { [:_avg, { u: :amount }] }
     let(:result) { 'AVG(u.amount)' }
     it { is_expected.to eq result }
-  end
-
-  context 'VALUES' do
-    context 'Array' do
-      context 'of Arrays' do
-        let(:structure) { [:_values, [true], ['Mrgl'], [nil]] }
-        let(:result) { "VALUES (TRUE), ('Mrgl'), (NULL)" }
-        it { is_expected.to eq result }
-      end
-
-      context 'of values' do
-        let(:structure) { [:_values, true, 'Mrgl', nil] }
-        let(:result) { "VALUES (TRUE, 'Mrgl', NULL)" }
-        it { is_expected.to eq result }
-      end
-    end
-
-    context 'Hash' do
-      let(:structure) do
-        [:_values, { values: [[true, 1], [false, 2], '_NULL, 0'],
-                     as: :t,
-                     columns: [:bool, :int] }]
-      end
-      let(:result) { 'VALUES (TRUE, 1), (FALSE, 2), (NULL, 0) AS t (bool, int)' }
-      it { is_expected.to eq result }
-    end
-
-    context 'String' do
-      context 'as raw sql' do
-        let(:structure) { [:_values, '_something?'] }
-        let(:result) { 'VALUES (something?)' }
-        it { is_expected.to eq result }
-      end
-      context 'as value' do
-        let(:structure) { [:_values, 'something?'] }
-        let(:result) { "VALUES ('something?')" }
-        it { is_expected.to eq result }
-      end
-    end
   end
 
   context 'missing operator' do

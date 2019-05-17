@@ -3,6 +3,8 @@
 module Terrazine
   module Compilers
     class Base
+      CONSTRUCTOR_CLASS = Constructor
+
       class << self
         def assign_multimethod(distinction, &method)
           multimethod.add_method(distinction, &method)
@@ -74,15 +76,20 @@ module Terrazine
 
       # for array args like `*structure` only!!!
       def initial_or_(structure, name)
-        structure.empty? ? initial_structure[name] : structure
+        structure.empty? ? initial_structure[name] : structure.first
       end
 
       def alias?(val)
+        return unless [String, Symbol].include?(val.class)
         val.to_s =~ /^_/
       end
 
       def hash_is_sub_query?(structure)
-        structure[:select]
+        structure[:select] || structure[:union] || structure[:values]
+      end
+
+      def constructor?(structure)
+        structure.is_a?(CONSTRUCTOR_CLASS)
       end
 
       # update ruby for delete_prefix? =)
