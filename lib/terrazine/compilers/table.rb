@@ -25,22 +25,17 @@ module Terrazine
         elsif [String, Symbol].include?(structure.second.class)
           res = "#{call_multimethod(structure.first)} AS #{structure.second}"
           next res unless structure[2]
-          res + " #{expressions(structure[2])}"
+          res + " (#{expressions(structure[2])})"
         else
           map_and_join(structure) { |i| call_multimethod i }
         end
       end
 
-      # assign_multimethod(Array) do |structure|
-      #   next "(#{operators(structure)})" if alias?(structure.first)
-      #   map_and_join(structure, ' AS ') { |i| call_multimethod i }
-      # end
-
       assign_multimethod(Hash) do |structure|
         "(#{clauses(structure)})"
       end
 
-      assign_multimethod(Constructor) do |structure|
+      assign_multimethod(CONSTRUCTOR_CLASS) do |structure|
         call_multimethod(structure.structure)
       end
 
