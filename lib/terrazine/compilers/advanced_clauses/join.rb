@@ -15,10 +15,14 @@ module Terrazine
           structure
         end
 
+        # [{users: {on: ...}}, {...}]
+        # => JOIN users ON ... JOIN ...
         def_multi(Array) do |structure|
-          map_and_join(structure) { |i| multimethod(i) }
+          map_and_join(structure, ' ') { |i| multimethod(i) }
         end
 
+        # { any_table_syntax => condition || {on: condition, type: :left}}
+        # LEFT JOIN some_table s_t ON condition
         def_multi(Hash) do |structure|
           map_and_join(structure) do |k, v|
             parse_value(v)
@@ -27,6 +31,7 @@ module Terrazine
           end
         end
 
+        # pass as it is
         def_multi(String) do |structure|
           structure
         end
