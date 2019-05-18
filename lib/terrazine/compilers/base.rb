@@ -6,22 +6,31 @@ module Terrazine
       CONSTRUCTOR_CLASS = Constructor
 
       class << self
-        def assign_multimethod(distinction, &method)
-          multimethod.add_method(distinction, &method)
+        def def_multi(*args, &method)
+          distinction = if args.count > 1
+                          method_name = args.first
+                          args.second
+                        else
+                          method_name = :multimethod
+                          args.first
+                        end
+          multimethod(method_name).add_method(distinction, &method)
         end
 
-        def assign_default(&method)
-          multimethod.assign_default(&method)
+        def def_default_multi(method_name = :multimethod, &method)
+          multimethod(method_name).assign_default(&method)
         end
 
-        def multimethod
-          @multimethod ||= Multimethods.new
-        end
-      end
+        def multimethod(method_name)
+          method = "@#{method_name}"
+          return instance_variable_get(method) if instance_variable_defined?(method)
 
-      def call_multimethod(*args)
-        instance_exec(*args, &self.class.multimethod.fetch_method(args.first))
-        # self.class.call_multimethod(*args)
+          m = instance_variable_set(method, Multimethods.new)
+          define_method(method_name) do |*args|
+            instance_exec(*args, &m.fetch_method(args.first))
+          end
+          m
+        end
       end
 
       def initialize(options)

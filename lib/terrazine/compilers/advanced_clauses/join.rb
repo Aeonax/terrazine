@@ -5,52 +5,51 @@ module Terrazine
     module AdvancedClauses
       class Join < Compilers::Base
         def build(structure)
-          case structure
-          when Array
-            # stopped supporting of structures like [[:users, :u], {...}]
-            structure.map { |s| build(s) }.join
-          when Hash
-            structure.map { |k, v| parse_pair(k, v) }.join
-          when String
-            structure
-          else
-            raise # TODO!
+          multimethod(structure)
+        end
+
+        private
+
+        def conditions(structure)
+          # Temporary plug from exceptions-_-
+          structure
+        end
+
+        def_multi(Array) do |structure|
+          map_and_join(structure) { |i| multimethod(i) }
+        end
+
+        def_multi(Hash) do |structure|
+          map_and_join(structure) do |k, v|
+            parse_value(v)
+            @table = tables(k)
+            result
           end
         end
 
-        def parse_pair(key, value)
-          case value
-          when Hash # { u__name: 'Aeonax' } || { on: { u__.... }, type: ... }
-            parse_hash_value(key, value)
-          when Array # [:u, {...}] || [:_eq, :u__name, 'Aeonax']
-            parse_array_value(key, value)
+        def_multi(String) do |structure|
+          structure
+        end
+
+        def_default_multi do |structure|
+          raise "Undefined structure: #{structure} for JOIN!"
+        end
+
+        def_multi(:parse_value, Hash) do |structure|
+          if structure[:on]
+            @type = structure[:type]
+            @on = conditions(structure[:on])
           else
-            result(build_tables(key), to_sql(value))
+            @on = conditions(structure)
           end
         end
 
-        def parse_hash_value(key, value)
-          condition = if value[:on]
-                        option = value[:type]
-                        build_conditions(value[:on])
-                      else
-                        build_conditions(value)
-                      end
-          result(build_tables(key), condition, option)
+        def_default_multi(:parse_value) do |structure|
+          @on = conditions(structure)
         end
 
-        def parse_array_value(key, value)
-          # requires to separate table alias and conditions... may be superstruction??
-          if value.first.to_s.match?(/^_/) # check_alias(value)
-            value[0] = value[0].sub(/^_/, '')
-            result(build_tables(key), build_conditions(value))
-          else
-            result(build_tables([key, value[0]]), build_conditions(value[1..-1]))
-          end
-        end
-
-        def result(from, condition, option = nil)
-          "#{option.to_s.upcase + ' ' if option}JOIN #{from} ON #{condition}"
+        def result
+          "#{@type.to_s.upcase + ' ' if @type}JOIN #{@table} ON #{@on}"
         end
       end
     end

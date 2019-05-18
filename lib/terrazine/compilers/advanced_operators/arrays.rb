@@ -5,7 +5,7 @@ module Terrazine
     module AdvancedOperators
       class Arrays < Compilers::Base
         def build(structure)
-          "ARRAY#{call_multimethod(structure)}"
+          "ARRAY#{multimethod(structure)}"
         end
 
         private
@@ -18,7 +18,7 @@ module Terrazine
           "[#{super(structure)}]"
         end
 
-        assign_multimethod(Hash) do |structure|
+        def_multi(Hash) do |structure|
           if hash_is_sub_query?(structure)
             clauses(structure)
           else
@@ -26,7 +26,7 @@ module Terrazine
           end
         end
 
-        assign_multimethod(CONSTRUCTOR_CLASS) do |structure|
+        def_multi(CONSTRUCTOR_CLASS) do |structure|
           clauses(structure.structure)
         end
 
@@ -34,15 +34,15 @@ module Terrazine
         # => [name, email]
         # [[:name, :email], [:mrgl, :rgl]]
         # => [[name, email], [mrgl, rgl]]
-        assign_multimethod(Array) do |structure|
+        def_multi(Array) do |structure|
           if structure.all? { |i| i.is_a?(Array) && !alias?(i.first) }
-            next "[#{map_and_join(structure) { |i| call_multimethod(i) }}]"
+            next "[#{map_and_join(structure) { |i| multimethod(i) }}]"
           end
 
           expressions(structure)
         end
 
-        assign_default do |structure|
+        def_default_multi do |structure|
           expressions(structure)
         end
       end

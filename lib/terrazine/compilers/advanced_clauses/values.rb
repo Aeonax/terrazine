@@ -9,7 +9,7 @@ module Terrazine
         end
 
         def build(structure)
-          content = call_multimethod(structure)
+          content = multimethod(structure)
           content = value_pattern(content) if @wrap
           "VALUES #{content} "
         end
@@ -26,23 +26,23 @@ module Terrazine
         # => (COUNT(*)), (COUNT(*))
         # [:name, :email, [:_count]]
         # => (name, email, COUNT(*))
-        assign_multimethod(Array) do |structure|
+        def_multi(Array) do |structure|
           # hell....
           if structure.count == 1 && structure.first.is_a?(Array)
-            next call_multimethod(structure.first)
+            next multimethod(structure.first)
           end
 
           next expressions(structure) if alias?(structure.first)
 
           if structure.all? { |i| i.is_a?(Array) && !alias?(i.first) }
             @wrap = false
-            next map_and_join(structure) { |i| value_pattern(call_multimethod(i)) }
+            next map_and_join(structure) { |i| value_pattern(multimethod(i)) }
           end
 
-          map_and_join(structure) { |i| call_multimethod(i) }
+          map_and_join(structure) { |i| multimethod(i) }
         end
 
-        assign_multimethod(String) do |structure|
+        def_multi(String) do |structure|
           if structure =~ /^!/
             @wrap = false
             structure.to_s.sub(/^!/, '')
@@ -54,7 +54,7 @@ module Terrazine
           end
         end
 
-        assign_default do |structure|
+        def_default_multi do |structure|
           expressions(structure)
         end
       end

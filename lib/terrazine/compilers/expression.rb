@@ -5,30 +5,30 @@ module Terrazine
     class Expression < Base
       def compile(structure = initial_structure,
                   prefix = @options[:prefix])
-        call_multimethod(structure, prefix)
+        multimethod(structure, prefix)
       end
 
-      assign_multimethod(Array) do |structure, prefix|
+      def_multi(Array) do |structure, prefix|
         if alias?(structure.first)
           operators(structure, prefix)
         else
-          map_and_join(structure) { |i| call_multimethod(i, prefix) }
+          map_and_join(structure) { |i| multimethod(i, prefix) }
         end
       end
 
-      assign_multimethod(Hash) do |structure, prefix|
+      def_multi(Hash) do |structure, prefix|
         next "(#{clauses(structure)})" if structure[:select]
 
         map_and_join(structure) do |k, v|
           if alias?(k)
-            "#{call_multimethod(v, prefix)} AS #{clear_alias(k)}"
+            "#{multimethod(v, prefix)} AS #{clear_alias(k)}"
           else
-            call_multimethod(v, k.to_s)
+            multimethod(v, k.to_s)
           end
         end
       end
 
-      assign_multimethod([String, Symbol]) do |structure, prefix|
+      def_multi([String, Symbol]) do |structure, prefix|
         structure = structure.to_s
         if prefix && structure !~ /, |\.|\(/
           "#{prefix}.#{structure}"
@@ -37,16 +37,16 @@ module Terrazine
         end
       end
 
-      assign_multimethod(Constructor) do |structure, _prefix|
+      def_multi(Constructor) do |structure, _prefix|
         "(#{clauses(structure.structure)})"
       end
 
-      assign_multimethod(TrueClass) do |_structure, prefix|
-        call_multimethod('*', prefix)
+      def_multi(TrueClass) do |_structure, prefix|
+        multimethod('*', prefix)
       end
 
       # TODO: values from value passing here... -_-  # ... wtf?
-      assign_default do |structure, _prefix|
+      def_default_multi do |structure, _prefix|
         structure
         # raise "Undefined class: #{structure.class} of #{structure}"
       end

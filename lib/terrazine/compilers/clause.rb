@@ -58,7 +58,7 @@ module Terrazine
       end
 
       def join(*structure)
-        AdvancedClauses::Join.new(options).build(initial_or_(structure, :join))
+        AdvancedClauses::Join.new(@options).build(initial_or_(structure, :join))
       end
 
       # TODO!!!
