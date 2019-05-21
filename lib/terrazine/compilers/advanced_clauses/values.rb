@@ -43,12 +43,9 @@ module Terrazine
         end
 
         def_multi(String) do |structure|
-          if structure =~ /^!/
+          if prefix?(structure, /^!/)
             @wrap = false
-            structure.to_s.sub(/^!/, '')
-          # if alias?(structure)
-          # @wrap = false
-          # clear_alias(structure)
+            clear_prefix(structure, /^!/)
           else
             to_sql(structure)
           end

@@ -6,6 +6,7 @@ require_relative 'compilers/clause'
 require_relative 'compilers/expression'
 require_relative 'compilers/operator'
 require_relative 'compilers/table'
+require_relative 'compilers/condition'
 
 module Terrazine
   # Public interface for interaction with Compilers
@@ -62,7 +63,8 @@ module Terrazine
     end
 
     module_function :compile_sql, :compile_clause, :compile_clauses,
-                    :compile_expressions, :compile_operators, :compile_tables
+                    :compile_expressions, :compile_operators, :compile_tables,
+                    :compile_conditions
 
     private
 
@@ -72,6 +74,7 @@ module Terrazine
 
     def compiler_options(options = {}, structure = nil)
       options[:params] ||= CompilerParams.new
+      structure = structure.structure if structure.is_a?(Constructor)
       options[:structure] ||= structure
       options
     end

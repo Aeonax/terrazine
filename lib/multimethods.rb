@@ -1,8 +1,11 @@
+# frozen_string_literal: true
+
 class Multimethods
-  def initialize
+  def initialize(method = :class)
     @methods = {}
     @mapper = {}
     @index = 0
+    @method = method
   end
 
   def add_method(value, &method)
@@ -22,8 +25,13 @@ class Multimethods
   end
 
   def fetch_method(data)
-    key = @mapper[data.class] || :default
-    @methods[key]
+    # puts "data: #{data}, differ: #{data.send(@method)}, method: #{@method}"
+    key = @mapper[data.send(@method)]
+    @methods[key] if key
+  end
+
+  def default_method
+    @methods[:default]
   end
 
   def perform(data, *args)

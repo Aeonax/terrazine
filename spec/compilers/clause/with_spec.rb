@@ -8,13 +8,13 @@ describe 'Compilers::Clause', skip: false do
     let(:clause) { :with }
 
     context 'array structure' do
-      let(:structure) { [:name, { select: true }] }
+      let(:structure) { [:name, { select: :* }] }
       it { is_expected.to eq 'WITH name AS (SELECT * ) ' }
     end
 
     context 'multi arrays structure' do
       let(:structure) do
-        [[:name, { select: true }],
+        [[:name, { select: :* }],
          [:another_name, { select: :mrgl }]]
       end
       let(:result) { 'WITH name AS (SELECT * ), another_name AS (SELECT mrgl ) ' }
@@ -23,7 +23,7 @@ describe 'Compilers::Clause', skip: false do
 
     context 'hash structure' do
       let(:structure) do
-        { name: { select: true },
+        { name: { select: :* },
           another_name: { select: :mrgl } }
       end
       let(:result) { 'WITH name AS (SELECT * ), another_name AS (SELECT mrgl ) ' }

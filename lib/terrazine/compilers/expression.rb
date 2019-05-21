@@ -21,19 +21,23 @@ module Terrazine
 
         map_and_join(structure) do |k, v|
           if alias?(k)
-            "#{multimethod(v, prefix)} AS #{clear_alias(k)}"
+            "#{multimethod(v, prefix)} AS #{clear_prefix(k)}"
           else
             multimethod(v, k.to_s)
           end
         end
       end
 
-      def_multi([String, Symbol]) do |structure, prefix|
-        structure = structure.to_s
-        if prefix && structure !~ /, |\.|\(/
+      def_multi([String, Symbol]) do |i_structure, prefix|
+        structure = i_structure.to_s
+        next structure if structure =~ /, |\.|\(/
+
+        if prefix
           "#{prefix}.#{structure}"
+        elsif structure =~ /__/
+          structure.to_s.sub(/__/, '.')
         else
-          structure
+          i_structure.is_a?(String) ? to_sql(structure) : structure
         end
       end
 
@@ -41,13 +45,14 @@ module Terrazine
         "(#{clauses(structure.structure)})"
       end
 
-      def_multi(TrueClass) do |_structure, prefix|
-        multimethod('*', prefix)
-      end
+      # def_multi(TrueClass) do |_structure, prefix|
+      #   # multimethod('*', prefix)
+      #   "#{prefix + '.' if prefix}*"
+      # end
 
       # TODO: values from value passing here... -_-  # ... wtf?
       def_default_multi do |structure, _prefix|
-        structure
+        to_sql(structure)
         # raise "Undefined class: #{structure.class} of #{structure}"
       end
     end

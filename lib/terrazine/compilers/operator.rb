@@ -6,61 +6,156 @@ module Terrazine
   module Compilers
     class Operator < Base
       def compile(structure = initial_structure)
-        operator = clear_alias(structure.first)
+        operator = clear_prefix(structure.first).to_sym
         arguments = structure.drop(1)
-        # puts operator
-        send(operator, arguments)
+
+        # send(operator, *arguments)
+        multimethod_by(operator, *arguments)
+        # TODO: rescue invalid args amount
       end
 
-      def params(arguments)
-        if arguments.count > 1
-          arguments.map { |i| add_param(i) }
+      initialize_multi(:itself)
+
+      def_multi(:params) do |structure|
+        if structure.is_a?(Array)
+          map_and_join(structure) { |i| add_param(i) }
         else
-          add_param(arguments.first)
+          add_param(structure)
         end
       end
 
-      # TODO: meditate over it
-      def count(arguments)
-        if arguments.is_a?(Array)
-          return count(true) if arguments.empty?
-          return map_and_join(arguments) { |v| count(v) }
-        end
-
-        if arguments.is_a?(Hash)
-          return map_and_join(arguments) { |k, v| "#{count(v)} AS #{k}" }
-        end
-
-        "COUNT(#{expressions(arguments)})"
+      def_multi(:count) do |structure = nil|
+        count(structure)
       end
 
-      def nullif(arguments)
-        "NULLIF(#{expressions(arguments.first)}, " \
-        "#{to_sql(arguments[1])})"
+      def_multi(:count, Array) do |structure|
+        map_and_join(structure) { |v| count(v) }
       end
 
-      def array(arguments)
-        AdvancedOperators::Arrays.new(@options).build(arguments.first)
+      def_multi(:count, Hash) do |structure|
+        map_and_join(structure) { |k, v| "#{count(v)} AS #{k}" }
       end
 
-      def avg(arguments)
-        "AVG(#{expressions(arguments.first)})"
+      def_multi(:count, NilClass) do |_|
+        count(:*)
       end
 
-      def missing_method_format(method, structure)
-        "#{method.upcase}(#{expressions(structure)})"
+      def_default_multi(:count) do |structure|
+        "COUNT(#{expressions(structure)})"
       end
 
-      private
+      def_multi(:nullif) do |expr, value|
+        "NULLIF(#{expressions(expr)}, " \
+        "#{to_sql(value)})"
+      end
 
-      def method_missing(operator, *structure)
+      def_multi(:array) do |structure|
+        AdvancedOperators::Arrays.new(@options).build(structure)
+      end
+
+      def_multi(:avg) do |structure|
+        "AVG(#{expressions(structure)})"
+      end
+
+      # conditional operators
+
+      def_multi(:and) do |*structure|
+        map_and_join(structure, ' AND ') { |i| expressions(i) }
+      end
+
+      def_multi(:or) do |*structure|
+        map_and_join(structure, ' OR ') { |i| expressions(i) }
+      end
+
+      # map array as COUNT?
+      def_multi(:not) do |*structure|
+        value = if structure.count == 1
+                  expressions(structure)
+                else
+                  multimethod_by(:eq, *structure)
+                end
+        "NOT #{value}"
+      end
+
+      def_multi(:in) do |expr, value|
+        "#{expressions(expr)} IN #{in_values(value)}"
+      end
+
+      def_multi(:in_values, [Hash, Constructor]) do |structure|
+        "(#{clauses(structure)})"
+      end
+
+      def_multi(:in_values, Array) do |structure|
+        "(#{map_and_join(structure) { |i| expressions(i) }})"
+      end
+
+      def_default_multi(:in_values) do |structure|
+        "(#{structure})"
+      end
+
+      def_multi(:eq) do |column, value|
+        next multimethod_by(:in, column, value) if value.is_a? Array
+        "#{expressions column} = #{expressions value}"
+      end
+
+      def_multi(:is) do |expr, value|
+        "#{expressions expr} IS #{to_sql value}"
+      end
+
+      def_multi(:between) do |*structure|
+        value = if structure.count == 1
+                  expressions(structure.first)
+                else
+                  multimethod_by(:and, *structure)
+                end
+        "BETWEEN #{value}"
+      end
+
+      def_default_multi do |operator, *structure|
         if structure.empty?
           operator.upcase
         elsif wrap_in_select?(operator)
           wrap_in_select(operator, *structure)
         else
-          missing_method_format(operator, structure)
+          method_missing_format(operator, *structure)
         end
+      end
+
+      def_multi(:like) do |*structure|
+        pattern_format('LIKE', structure)
+      end
+
+      def_multi(:ilike) do |*structure|
+        pattern_format('iLIKE', structure)
+      end
+
+      def_multi(:reg) do |*structure|
+        pattern_format('~', structure)
+      end
+
+      def_multi(:reg_i) do |*structure|
+        pattern_format('~*', structure)
+      end
+
+      def_multi(:reg_f) do |*structure|
+        pattern_format('!~', structure)
+      end
+
+      def_multi(:reg_fi) do |*structure|
+        pattern_format('!~*', structure)
+      end
+
+      # TODO: > < >= <= ...
+
+      private
+
+      def pattern_format(pattern, structure)
+        "#{expressions structure.first} #{pattern} " \
+        "#{expressions structure.second}"
+      end
+
+      def method_missing_format(method, structure)
+        "#{method.upcase}(#{expressions(structure)})"
       end
 
       def prefix
@@ -72,11 +167,13 @@ module Terrazine
       end
 
       def wrap_in_select(operator, structure)
-        if structure.first.is_a?(Hash) && hash_is_sub_query?(structure.first)
-          expressions(select: missing_method_format(operator, :item),
+        if structure.is_a?(Hash) && hash_is_sub_query?(structure)
+          expressions(select: method_missing_format(operator, :item),
                       from: [structure, :item])
+        elsif structure.is_a?(CONSTRUCTOR_CLASS)
+          wrap_in_select(operator, structure.structure)
         else
-          missing_method_format(operator, structure)
+          method_missing_format(operator, structure)
         end
       end
     end

@@ -35,13 +35,13 @@ describe 'Compilers::Operator' do
   context 'ARRAY' do
     context 'with Subquery' do
       context 'Hash' do
-        let(:structure) { [:_array, { select: true }] }
+        let(:structure) { [:_array, { select: :* }] }
         let(:result) { 'ARRAY(SELECT * )' }
         it { is_expected.to eq result }
       end
 
       context 'Constructor' do
-        let(:structure) { [:_array, init_constructor(select: true)] }
+        let(:structure) { [:_array, init_constructor(select: :*)] }
         let(:result) { 'ARRAY(SELECT * )' }
         it { is_expected.to eq result }
       end
@@ -56,13 +56,13 @@ describe 'Compilers::Operator' do
 
       context 'not Hash' do
         let(:structure) { [:_array, [:name, true, [:_count]]] }
-        let(:result) { 'ARRAY[name, *, COUNT(*)]' }
+        let(:result) { 'ARRAY[name, TRUE, COUNT(*)]' }
         it { is_expected.to eq result }
       end
 
       context 'nested' do
         let(:structure) { [:_array, [[:mrgl, :rgl], [:name, true]]] }
-        let(:result) { 'ARRAY[[mrgl, rgl], [name, *]]' }
+        let(:result) { 'ARRAY[[mrgl, rgl], [name, TRUE]]' }
         it { is_expected.to eq result }
       end
 
@@ -88,15 +88,124 @@ describe 'Compilers::Operator' do
 
   context 'JSON_AGG' do
     context 'with sub query' do
-      let(:structure) { [:_json_agg, { select: true }] }
+      let(:structure) { [:_json_agg, { select: :* }] }
       let(:result) { '(SELECT JSON_AGG(item) FROM (SELECT * ) AS item )' }
       it { is_expected.to eq result }
     end
 
     context 'single value' do
-      let(:structure) { [:_json_agg, :item] }
-      let(:result) { 'JSON_AGG(item)' }
+      let(:structure) { [:_json_agg, :u__item] }
+      let(:result) { 'JSON_AGG(u.item)' }
       it { is_expected.to eq result }
+    end
+  end
+
+  context 'Operators' do
+    context 'AND' do
+      let(:structure) { [:_and, :u__item, :z__mrgl] }
+      let(:result) { 'u.item AND z.mrgl' }
+      it { is_expected.to eq result }
+    end
+
+    context 'NOT' do
+      context 'with single element' do
+        let(:structure) { [:_not, [:_and, :u__item, :z__mrgl]] }
+        let(:result) { 'NOT u.item AND z.mrgl' }
+        it { is_expected.to eq result }
+      end
+
+      context 'with several values as !=' do
+        let(:structure) { [:_not, :u__item, :z__mrgl] }
+        let(:result) { 'NOT u.item = z.mrgl' }
+        it { is_expected.to eq result }
+      end
+    end
+
+    context 'IN' do
+      context 'Array' do
+        let(:structure) { [:_in, :u__id, [1, 2, 3]] }
+        let(:result) { 'u.id IN (1, 2, 3)' }
+        it { is_expected.to eq result }
+      end
+
+      context 'Sub query' do
+        let(:structure) { [:_in, :u__id, init_constructor(select: :*)] }
+        let(:result) { 'u.id IN (SELECT * )' }
+        it { is_expected.to eq result }
+      end
+
+      context 'anything else' do
+        let(:structure) { [:_in, :u__id, "'mrgl', 'rgl'"] }
+        let(:result) { "u.id IN (#{structure[2]})" }
+        it { is_expected.to eq result }
+      end
+    end
+
+    context '=' do
+      context 'Array' do
+        let(:structure) { [:_eq, :u__id, [1, 2, 3]] }
+        let(:result) { 'u.id IN (1, 2, 3)' }
+        it { is_expected.to eq result }
+      end
+
+      context 'anything else' do
+        let(:structure) { [:_eq, :u__id, true] }
+        let(:result) { 'u.id = TRUE' }
+        it { is_expected.to eq result }
+      end
+    end
+
+    context 'IS' do
+      let(:structure) { [:_is, :u__id, true] }
+      let(:result) { 'u.id IS TRUE' }
+      it { is_expected.to eq result }
+    end
+
+    context 'BETWEEN' do
+      context 'multiple values' do
+        let(:structure) { [:_between, :u__rating, :m__rating, :f__rating] }
+        let(:result) { 'BETWEEN u.rating AND m.rating AND f.rating' }
+        it { is_expected.to eq result }
+      end
+
+      context 'any other single value treated as expression' do
+        let(:structure) { [:_between, 'u.rating AND 95'] }
+        let(:result) { "BETWEEN #{structure[1]}" }
+        it { is_expected.to eq result }
+      end
+    end
+
+    context 'Patterns' do
+      context 'LIKE' do
+        let(:structure) { [:_like, :u__name, 'Aeonax'] }
+        let(:result) { "u.name LIKE 'Aeonax'" }
+        it { is_expected.to eq result }
+      end
+      context 'iLIKE' do
+        let(:structure) { [:_ilike, :u__name, { select: :name }] }
+        let(:result) { "u.name iLIKE (SELECT name )" }
+        it { is_expected.to eq result }
+      end
+      context '~' do
+        let(:structure) { [:_reg, :u__name, '^[a-o]2'] }
+        let(:result) { "u.name ~ '^[a-o]2'" }
+        it { is_expected.to eq result }
+      end
+      context '~*' do
+        let(:structure) { [:_reg_i, :u__name, '^[a-o]2'] }
+        let(:result) { "u.name ~* '^[a-o]2'" }
+        it { is_expected.to eq result }
+      end
+      context '!~' do
+        let(:structure) { [:_reg_f, :u__name, '^[a-o]2'] }
+        let(:result) { "u.name !~ '^[a-o]2'" }
+        it { is_expected.to eq result }
+      end
+      context '!~*' do
+        let(:structure) { [:_reg_fi, :u__name, '^[a-o]2'] }
+        let(:result) { "u.name !~* '^[a-o]2'" }
+        it { is_expected.to eq result }
+      end
     end
   end
 end

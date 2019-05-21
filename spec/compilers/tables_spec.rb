@@ -20,7 +20,7 @@ describe 'Compilers::Table' do
     end
 
     context 'as table && alias && columns' do
-      let(:structure) { [{ select: true }, :u, [:column_1, :column_2]] }
+      let(:structure) { [{ select: :* }, :u, [:column_1, :column_2]] }
       let(:result) { '(SELECT * ) AS u (column_1, column_2)' }
       it { is_expected.to eq result }
     end

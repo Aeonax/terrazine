@@ -25,9 +25,19 @@ module Terrazine
           method = "@#{method_name}"
           return instance_variable_get(method) if instance_variable_defined?(method)
 
-          m = instance_variable_set(method, Multimethods.new)
+          initialize_multi(:class, method_name)
+        end
+
+        def initialize_multi(differ = :class, method_name = :multimethod)
+          m = instance_variable_set("@#{method_name}", Multimethods.new(differ))
           define_method(method_name) do |*args|
-            instance_exec(*args, &m.fetch_method(args.first))
+            method = m.fetch_method(args.first) || m.default_method
+            instance_exec(*args, &method)
+          end
+          define_method("#{method_name}_by") do |*args|
+            method = m.fetch_method(args.first)
+            next instance_exec(*args.drop(1), &method) if method
+            instance_exec(args.first, *args.drop(1), &m.default_method)
           end
           m
         end
@@ -39,28 +49,34 @@ module Terrazine
         after_initialize_callback
       end
 
-      def build_param(param)
+      # TODO!
+      def add_param(param)
         params << param
         "$#{params.count}"
       end
 
-      # where it should be?
-      def to_sql(data)
-        case data
-        when String, Symbol
-          data = data.to_s
-          if data =~ /true|false/
-            data.upcase
-          else
-            "'#{data}'"
-          end
-        when TrueClass, FalseClass
-          data.to_s.upcase
-        when nil
-          'NULL'
-        else
-          data
+      def_multi(:to_sql, [String, Symbol]) do |data|
+        data = data.to_s
+        if data =~ /true|false/
+          data.upcase
+        elsif data =~ /^!/ # pass data as it is
+          data.sub(/^!/, '')
+        else # TODO: replace with params
+          # build_param(data)
+          "'#{data}'"
         end
+      end
+
+      def_multi(:to_sql, [TrueClass, FalseClass]) do |data|
+        data.to_s.upcase
+      end
+
+      def_multi(:to_sql, nil) do |_data|
+        'NULL'
+      end
+
+      def_default_multi(:to_sql) do |data|
+        data
       end
 
       private
@@ -79,18 +95,22 @@ module Terrazine
         @options[:params] ||= []
       end
 
-      def add_param
-        # TODO!
-      end
+      # def add_param
+      # TODO!
+      # end
 
       # for array args like `*structure` only!!!
       def initial_or_(structure, name)
         structure.empty? ? initial_structure[name] : structure.first
       end
 
+      def prefix?(val, prefix)
+        val.to_s =~ prefix
+      end
+
       def alias?(val)
         return unless [String, Symbol].include?(val.class)
-        val.to_s =~ /^_/
+        prefix?(val, /^_/)
       end
 
       def hash_is_sub_query?(structure)
@@ -101,9 +121,12 @@ module Terrazine
         structure.is_a?(CONSTRUCTOR_CLASS)
       end
 
-      # update ruby for delete_prefix? =)
-      def clear_alias(val)
-        val.to_s.sub(/^_/, '')
+      def text?(structure)
+        [String, Symbol].include?(structure.class)
+      end
+
+      def clear_prefix(val, prefix = /^_/)
+        val.to_s.sub(prefix, '')
       end
 
       def map_and_join(data, joiner = ', ', &block)
@@ -124,6 +147,10 @@ module Terrazine
 
       def tables(data)
         Compiler.compile_tables(data, @options.except(:structure))
+      end
+
+      def conditions(data)
+        Compiler.compile_conditions(data, @options.except(:structure))
       end
 
       def compiler_options(options)

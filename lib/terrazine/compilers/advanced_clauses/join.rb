@@ -10,15 +10,14 @@ module Terrazine
 
         private
 
-        def conditions(structure)
-          # Temporary plug from exceptions-_-
-          structure
+        def result
+          "#{@type.to_s.upcase + ' ' if @type}JOIN #{@table} ON #{@on} "
         end
 
         # [{users: {on: ...}}, {...}]
         # => JOIN users ON ... JOIN ...
         def_multi(Array) do |structure|
-          map_and_join(structure, ' ') { |i| multimethod(i) }
+          map_and_join(structure, '') { |i| multimethod(i) }
         end
 
         # { any_table_syntax => condition || {on: condition, type: :left}}
@@ -51,10 +50,6 @@ module Terrazine
 
         def_default_multi(:parse_value) do |structure|
           @on = conditions(structure)
-        end
-
-        def result
-          "#{@type.to_s.upcase + ' ' if @type}JOIN #{@table} ON #{@on}"
         end
       end
     end

@@ -8,14 +8,14 @@ describe 'Compilers::Expression' do
 
   context 'true' do
     let(:structure) { true }
-    let(:result) { '*' }
+    let(:result) { 'TRUE' }
     it { is_expected.to eq result }
   end
 
   context 'Array' do
     context 'with fields' do
       let(:structure) { [:some, [:name, :role, [true]]] }
-      let(:result) { 'some, name, role, *' }
+      let(:result) { 'some, name, role, TRUE' }
       it { is_expected.to eq result }
     end
 
@@ -28,7 +28,7 @@ describe 'Compilers::Expression' do
 
   context 'Hash' do
     context 'as sub query' do
-      let(:structure) { { select: true } }
+      let(:structure) { { select: :* } }
       let(:result) { '(SELECT * )' }
       it { is_expected.to eq result }
     end
@@ -47,19 +47,27 @@ describe 'Compilers::Expression' do
   end
 
   context 'Text' do
-    let(:structure) { 'some text that you paste as it is' }
-    let(:result) { 'some text that you paste as it is' }
-    it { is_expected.to eq result }
-  end
+    context 'Raw string' do
+      let(:structure) { 'some text that you paste as it is' }
+      let(:result) { "'some text that you paste as it is'" }
+      it { is_expected.to eq result }
+    end
 
-  context 'Symbol' do
-    let(:structure) { :name }
-    let(:result) { 'name' }
-    it { is_expected.to eq result }
+    context 'Symbol' do
+      let(:structure) { :name }
+      let(:result) { 'name' }
+      it { is_expected.to eq result }
+    end
+
+    context 'With embeded table' do
+      let(:structure) { :u__name }
+      let(:result) { 'u.name' }
+      it { is_expected.to eq result }
+    end
   end
 
   context 'Constructor' do
-    let(:structure) { init_constructor(select: true) }
+    let(:structure) { init_constructor(select: :*) }
     let(:result) { '(SELECT * )' }
     it { is_expected.to eq result }
   end
@@ -68,8 +76,8 @@ describe 'Compilers::Expression' do
     let(:structure) do
       { u: [:name, :email],
         f: { _f_count: [:_count, :id] },
-        _sub: { select: true },
-        _cons: init_constructor(select: true) }
+        _sub: { select: :* },
+        _cons: init_constructor(select: :*) }
     end
     let(:result) do
       'u.name, u.email, COUNT(f.id) AS f_count, (SELECT * ) AS sub, ' \
