@@ -14,7 +14,7 @@ module Terrazine
         # TODO: rescue invalid args amount
       end
 
-      initialize_multi(:itself)
+      initialize_multi(differ: :itself, differ_by: true)
 
       def_multi(:params) do |structure|
         if structure.is_a?(Array)
@@ -60,11 +60,11 @@ module Terrazine
       # conditional operators
 
       def_multi(:and) do |*structure|
-        map_and_join(structure, ' AND ') { |i| expressions(i) }
+        map_and_join(structure, ' AND ') { |i| conditions(i) }
       end
 
       def_multi(:or) do |*structure|
-        map_and_join(structure, ' OR ') { |i| expressions(i) }
+        map_and_join(structure, ' OR ') { |i| conditions(i) }
       end
 
       # map array as COUNT?

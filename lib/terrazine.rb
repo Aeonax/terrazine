@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'helper.rb'
-require_relative 'multimethods.rb'
+require_relative 'multimethods_interface'
 require_relative 'terrazine/config'
 require_relative 'terrazine/builder'
 require_relative 'terrazine/constructor'
