@@ -34,7 +34,7 @@ module Terrazine
         data.to_s.upcase
       end
 
-      def_multi(:to_sql, nil) do |_data|
+      def_multi(:to_sql, NilClass) do |_data|
         'NULL'
       end
 

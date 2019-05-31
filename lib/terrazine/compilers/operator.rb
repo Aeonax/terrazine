@@ -9,12 +9,14 @@ module Terrazine
         operator = clear_prefix(structure.first).to_sym
         arguments = structure.drop(1)
 
-        # send(operator, *arguments)
         multimethod_by(operator, *arguments)
-        # TODO: rescue invalid args amount
+        # TODO: rescue invalid args amount?
       end
 
       initialize_multi(differ: :itself, differ_by: true)
+
+      # god damn.... It looks like shit...
+      require_relative 'advanced_operators/conditional'
 
       def_multi(:params) do |structure|
         if structure.is_a?(Array)
@@ -57,60 +59,6 @@ module Terrazine
         "AVG(#{expressions(structure)})"
       end
 
-      # conditional operators
-
-      def_multi(:and) do |*structure|
-        map_and_join(structure, ' AND ') { |i| conditions(i) }
-      end
-
-      def_multi(:or) do |*structure|
-        map_and_join(structure, ' OR ') { |i| conditions(i) }
-      end
-
-      # map array as COUNT?
-      def_multi(:not) do |*structure|
-        value = if structure.count == 1
-                  expressions(structure)
-                else
-                  multimethod_by(:eq, *structure)
-                end
-        "NOT #{value}"
-      end
-
-      def_multi(:in) do |expr, value|
-        "#{expressions(expr)} IN #{in_values(value)}"
-      end
-
-      def_multi(:in_values, [Hash, Constructor]) do |structure|
-        "(#{clauses(structure)})"
-      end
-
-      def_multi(:in_values, Array) do |structure|
-        "(#{map_and_join(structure) { |i| expressions(i) }})"
-      end
-
-      def_default_multi(:in_values) do |structure|
-        "(#{structure})"
-      end
-
-      def_multi(:eq) do |column, value|
-        next multimethod_by(:in, column, value) if value.is_a? Array
-        "#{expressions column} = #{expressions value}"
-      end
-
-      def_multi(:is) do |expr, value|
-        "#{expressions expr} IS #{to_sql value}"
-      end
-
-      def_multi(:between) do |*structure|
-        value = if structure.count == 1
-                  expressions(structure.first)
-                else
-                  multimethod_by(:and, *structure)
-                end
-        "BETWEEN #{value}"
-      end
-
       def_default_multi do |operator, *structure|
         if structure.empty?
           operator.upcase
@@ -121,38 +69,7 @@ module Terrazine
         end
       end
 
-      def_multi(:like) do |*structure|
-        pattern_format('LIKE', structure)
-      end
-
-      def_multi(:ilike) do |*structure|
-        pattern_format('iLIKE', structure)
-      end
-
-      def_multi(:reg) do |*structure|
-        pattern_format('~', structure)
-      end
-
-      def_multi(:reg_i) do |*structure|
-        pattern_format('~*', structure)
-      end
-
-      def_multi(:reg_f) do |*structure|
-        pattern_format('!~', structure)
-      end
-
-      def_multi(:reg_fi) do |*structure|
-        pattern_format('!~*', structure)
-      end
-
-      # TODO: > < >= <= ...
-
       private
-
-      def pattern_format(pattern, structure)
-        "#{expressions structure.first} #{pattern} " \
-        "#{expressions structure.second}"
-      end
 
       def method_missing_format(method, structure)
         "#{method.upcase}(#{expressions(structure)})"
