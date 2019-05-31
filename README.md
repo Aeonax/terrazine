@@ -13,13 +13,14 @@ Construct data structures inside Constructor instance.
 Get result and access any returned data rails like syntax.
 
 #### Realization
-This was my first meeting with OOP... Now it's scary inside, but it can grow in shiny gem in future=)
-
-#### Readiness
-I'm doing this gem for my own use. And I use it on our prod for constructing huge SQL SELECT queries and it works really well^\_^ BUT. Now it really unstable and some parts will be remade in future... So if you accidentally got lost and got on this page, then I advise you to use this gem only for informational purposes, or on your own risk=)  
+This was my first meeting with OOP... Now it's scary inside, but there is [0.0.4](https://github.com/Aeonax/terrazine/pull/2) will be soon that will be not so scary=))
 
 #### DB adapters
-Now supports only Postgresql.
+Now? supports only Postgresql.
+
+#### Why?
+I tried to find something that will help me to create complex SQL queries, but there was only `String` and `.erb`... They didn't respond to my requirements=( In my vision data structures, especially in combination with objects([Constructor](https://github.com/Aeonax/terrazine/wiki/Constructor)), more convinient way for representing complex SQL than `String` or `ORM`...  
+As for me, the right question is why only now? Why so late? Or i still blind...
 
 ## Usage
 #### Initialization
