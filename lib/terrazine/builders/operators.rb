@@ -15,7 +15,7 @@ module Terrazine
       "#{name}(#{build_columns arguments, prefix})"
     end
 
-    def operator_params(arguments, _)
+    def operator_params(arguments, _prefix)
       if arguments.count > 1
         arguments.map { |i| build_param i }
       else
@@ -49,6 +49,7 @@ module Terrazine
       "AVG(#{build_columns(arguments.first, prefix)})"
     end
 
+    # shit... as almost everything...=(
     def operator_values(arguments, _)
       values = arguments.first.first.is_a?(Array) ? arguments.first : [arguments.first]
       values.map! { |i| "(#{build_columns i})" }

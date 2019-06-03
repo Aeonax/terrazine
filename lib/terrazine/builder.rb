@@ -61,10 +61,17 @@ module Terrazine
       val.to_s =~ /^_/
     end
 
+    def clear_alias(val)
+      val.to_s.sub(/^_/, '')
+    end
+
     def iterate_hash(data, join = true)
-      iterations = []
-      data.each { |k, v| iterations << yield(k, v) }
+      iterations = data.map { |k, v| yield(k, v) }
       join ? iterations.join(', ') : iterations
+    end
+
+    def map_and_join(data, joiner = ', ', &block)
+      data.map(&block).join(joiner)
     end
   end
 end

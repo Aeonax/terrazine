@@ -1,13 +1,17 @@
+# frozen_string_literal: true
+
 require_relative 'helper.rb'
+require_relative 'multimethods_interface'
 require_relative 'terrazine/config'
 require_relative 'terrazine/builder'
 require_relative 'terrazine/constructor'
+require_relative 'terrazine/compiler'
+
 require_relative 'terrazine/type_map'
 require_relative 'terrazine/presenter'
 require_relative 'terrazine/result'
 
 module Terrazine
-
   def self.connection
     Config.connection
   end
@@ -35,7 +39,7 @@ module Terrazine
     when Constructor
       structure.build_sql options
     when Array
-      # TODO!!!!!
+      # TODO!!!!! .... what???????
       if structure.first.is_a?(String) && structure.second.is_a?(Array)
         structure
       else
